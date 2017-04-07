@@ -1,0 +1,6 @@
+futures
+python-dateutil
+requests>=2.9.2
+vcrpy
+azure-common
+cryptography>=1.3.0

@@ -1985,6 +1985,7 @@ class BaseBlobService(StorageClient):
                 self,
                 container_name,
                 blob_name,
+                snapshot,
                 download_size,
                 self.MAX_CHUNK_GET_SIZE,
                 first_get_size,
@@ -2870,7 +2871,7 @@ class BaseBlobService(StorageClient):
         is in progress.
 
         When copying from a page blob, the Blob service creates a destination page 
-        blob of the source blob’s length, initially containing all zeroes. Then 
+        blob of the source blob's length, initially containing all zeroes. Then 
         the source page ranges are enumerated, and non-empty ranges are copied. 
 
         For a block blob or an append blob, the Blob service creates a committed 

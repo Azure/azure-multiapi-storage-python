@@ -10,8 +10,8 @@ Change Log
 +++++
 * Initial release.  
 * Supported API versions:  
-    - 2016-05-31 (from 0.34.0 of azure-storage)  
-    - 2015-04-05 (from 0.30.0 of azure-storage)  
+    - 2016-05-31 (from 0.34.3 of azure-storage)
+    - 2015-04-05 (from 0.30.0 of azure-storage)
 
 
 Contribute Code

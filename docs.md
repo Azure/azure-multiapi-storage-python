@@ -34,7 +34,7 @@ pip install <path-to-wheel>
 ### Handling changes to Storage SDK
 When there are changes made in https://github.com/Azure/azure-storage-python, they should be added here also.
 
-If the change is for a new API version, create the vYYYY-MM-DD directory and copy the code.  
+If the change is for a new API version, create the vYYYY_MM_DD directory and copy the code.  
 Finally, replace the absolute imports to `azure.storage` to be relative.
 
 If there is a change but the API version does not change, find the appropriate API version directory, delete the old code and replace.  

@@ -1,6 +1,7 @@
 ### Packaging
-Create the package by running:
+Create the package (both source and whl) by running:
 ```
+python setup.py sdist
 python setup.py bdist_wheel
 ```
 

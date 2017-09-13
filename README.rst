@@ -15,6 +15,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 Change Log
 ----------
 
+0.1.4
++++++
+* Fix for sdist (source distribution) not including azure/__init__.py.
+
 0.1.3
 +++++
 * Upgrade:

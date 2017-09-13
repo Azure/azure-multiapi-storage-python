@@ -41,7 +41,7 @@ setup(
     license='MIT',
     author='Microsoft Corporation',
     author_email='azpycli@microsoft.com',
-    url='https://github.com/derekbekoe/azure-multiapi-storage-python',
+    url='https://github.com/Azure/azure-multiapi-storage-python',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Programming Language :: Python',

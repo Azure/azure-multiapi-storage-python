@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,23 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import threading
 
-from time import sleep
-from .._error import _ERROR_NO_SINGLE_THREAD_CHUNKING
+from ..common._error import _ERROR_NO_SINGLE_THREAD_CHUNKING
+
 
 def _download_file_chunks(file_service, share_name, directory_name, file_name,
                           download_size, block_size, progress, start_range, end_range, 
                           stream, max_connections, progress_callback, validate_content, 
-                          timeout, operation_context):
+                          timeout, operation_context, snapshot):
     if max_connections <= 1:
         raise ValueError(_ERROR_NO_SINGLE_THREAD_CHUNKING.format('file'))
 
     downloader = _FileChunkDownloader(
         file_service,
         share_name,
-        directory_name, 
+        directory_name,
         file_name,
         download_size,
         block_size,
@@ -39,16 +39,18 @@ def _download_file_chunks(file_service, share_name, directory_name, file_name,
         validate_content,
         timeout,
         operation_context,
+        snapshot,
     )
 
     import concurrent.futures
     executor = concurrent.futures.ThreadPoolExecutor(max_connections)
     result = list(executor.map(downloader.process_chunk, downloader.get_chunk_offsets()))
 
+
 class _FileChunkDownloader(object):
     def __init__(self, file_service, share_name, directory_name, file_name, 
                  download_size, chunk_size, progress, start_range, end_range, 
-                 stream, progress_callback, validate_content, timeout, operation_context):
+                 stream, progress_callback, validate_content, timeout, operation_context, snapshot):
         self.file_service = file_service
         self.share_name = share_name
         self.directory_name = directory_name
@@ -56,7 +58,7 @@ class _FileChunkDownloader(object):
         self.chunk_size = chunk_size
 
         self.download_size = download_size
-        self.start_index = start_range    
+        self.start_index = start_range
         self.file_end = end_range
 
         self.stream = stream
@@ -68,6 +70,7 @@ class _FileChunkDownloader(object):
         self.validate_content = validate_content
         self.timeout = timeout
         self.operation_context = operation_context
+        self.snapshot = snapshot
 
     def get_chunk_offsets(self):
         index = self.start_index
@@ -108,5 +111,6 @@ class _FileChunkDownloader(object):
             end_range=chunk_end - 1,
             validate_content=self.validate_content,
             timeout=self.timeout,
-            _context=self.operation_context
+            _context=self.operation_context,
+            snapshot=self.snapshot
         )

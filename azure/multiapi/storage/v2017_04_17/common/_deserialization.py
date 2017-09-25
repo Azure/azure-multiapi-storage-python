@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from dateutil import parser
+
 from ._common_conversion import _to_str
+
 try:
     from xml.etree import cElementTree as ETree
 except ImportError:
@@ -25,20 +27,23 @@ from .models import (
     Metrics,
     CorsRule,
     AccessPolicy,
-    _HeaderDict,
     _dict,
     GeoReplication,
     ServiceStats,
 )
 
+
 def _int_to_str(value):
     return value if value is None else int(value)
+
 
 def _bool(value):
     return value.lower() == 'true'
 
+
 def _to_upper_str(value):
     return _to_str(value).upper() if value is not None else None
+
 
 def _get_download_size(start_range, end_range, resource_size):
     if start_range is not None:
@@ -49,6 +54,7 @@ def _get_download_size(start_range, end_range, resource_size):
             return None
     else:
         return resource_size
+
 
 GET_PROPERTIES_ATTRIBUTE_MAP = {
     'last-modified': (None, 'last_modified', parser.parse),
@@ -81,6 +87,7 @@ GET_PROPERTIES_ATTRIBUTE_MAP = {
     'x-ms-copy-status-description': ('copy', 'status_description', _to_str),
 }
 
+
 def _parse_metadata(response):
     '''
     Extracts out resource metadata information.
@@ -95,6 +102,7 @@ def _parse_metadata(response):
             metadata[key[10:]] = _to_str(value)
 
     return metadata
+
 
 def _parse_properties(response, result_class):
     '''
@@ -119,10 +127,11 @@ def _parse_properties(response, result_class):
         props.blob_tier = _to_upper_str(props.blob_tier)
     return props
 
+
 def _parse_length_from_content_range(content_range):
     '''
     Parses the blob length from the content range header: bytes 1-3/65537
-    '''   
+    '''
     if content_range is None:
         return None
 
@@ -130,6 +139,7 @@ def _parse_length_from_content_range(content_range):
     # Next, split on slash and take the second half: '65537'
     # Finally, convert to an int: 65537
     return int(content_range.split(' ', 1)[1].split('/', 1)[1])
+
 
 def _convert_xml_to_signed_identifiers(response):
     '''
@@ -173,6 +183,7 @@ def _convert_xml_to_signed_identifiers(response):
 
     return signed_identifiers
 
+
 def _convert_xml_to_service_stats(response):
     '''
     <?xml version="1.0" encoding="utf-8"?>
@@ -198,6 +209,7 @@ def _convert_xml_to_service_stats(response):
     service_stats = ServiceStats()
     service_stats.geo_replication = geo_replication
     return service_stats
+
 
 def _convert_xml_to_service_properties(response):
     '''
@@ -247,7 +259,7 @@ def _convert_xml_to_service_properties(response):
 
     service_properties_element = ETree.fromstring(response.body)
     service_properties = ServiceProperties()
-    
+
     # Logging
     logging = service_properties_element.find('Logging')
     if logging is not None:
@@ -257,8 +269,8 @@ def _convert_xml_to_service_properties(response):
         service_properties.logging.read = _bool(logging.find('Read').text)
         service_properties.logging.write = _bool(logging.find('Write').text)
 
-        _convert_xml_to_retention_policy(logging.find('RetentionPolicy'), 
-                                            service_properties.logging.retention_policy)
+        _convert_xml_to_retention_policy(logging.find('RetentionPolicy'),
+                                         service_properties.logging.retention_policy)
     # HourMetrics
     hour_metrics_element = service_properties_element.find('HourMetrics')
     if hour_metrics_element is not None:
@@ -336,6 +348,6 @@ def _convert_xml_to_retention_policy(xml, retention_policy):
     retention_policy.enabled = _bool(xml.find('Enabled').text)
 
     # Days
-    days_element =  xml.find('Days')
+    days_element = xml.find('Days')
     if days_element is not None:
         retention_policy.days = int(days_element.text)

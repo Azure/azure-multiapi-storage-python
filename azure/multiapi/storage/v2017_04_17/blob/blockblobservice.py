@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,8 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._error import (
+# --------------------------------------------------------------------------
+from io import (
+    BytesIO
+)
+from os import (
+    path,
+)
+
+from ..common._common_conversion import (
+    _encode_base64,
+    _to_str,
+    _int_to_str,
+    _datetime_to_utc_string,
+    _get_content_md5,
+)
+from ..common._constants import (
+    SERVICE_HOST_BASE,
+    DEFAULT_PROTOCOL,
+)
+from ..common._error import (
     _validate_not_none,
     _validate_type_bytes,
     _validate_encryption_required,
@@ -20,56 +38,38 @@ from .._error import (
     _ERROR_VALUE_NEGATIVE,
     _ERROR_VALUE_SHOULD_BE_STREAM
 )
-from .._common_conversion import (
-    _encode_base64,
-    _to_str,
-    _int_to_str,
-    _datetime_to_utc_string,
-    _get_content_md5,
-)
-from .._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_request_body,
     _get_data_bytes_only,
     _get_data_bytes_or_stream_only,
     _add_metadata_headers,
 )
-from .._http import HTTPRequest
-from ._upload_chunking import (
-    _BlockBlobChunkUploader,
-    _upload_blob_chunks,
-    _upload_blob_substream_blocks,
-)
-from .models import (
-    _BlobTypes,
-)
-from .._constants import (
-    SERVICE_HOST_BASE,
-    DEFAULT_PROTOCOL,
-)
-from ._serialization import (
-    _convert_block_list_to_xml,
-    _get_path,
-)
-from .._serialization import (
-   _len_plus
+from ..common._serialization import (
+    _len_plus
 )
 from ._deserialization import (
     _convert_xml_to_block_list,
     _parse_base_properties,
 )
-from ._encryption import(
+from ._encryption import (
     _encrypt_blob,
     _generate_blob_encryption_data,
 )
+from ._serialization import (
+    _convert_block_list_to_xml,
+    _get_path,
+)
+from ._upload_chunking import (
+    _BlockBlobChunkUploader,
+    _upload_blob_chunks,
+    _upload_blob_substream_blocks,
+)
 from .baseblobservice import BaseBlobService
-from os import(
-    path,
+from .models import (
+    _BlobTypes,
 )
-import sys
-from io import (
-    BytesIO,
-    IOBase
-)
+
 
 class BlockBlobService(BaseBlobService):
     '''
@@ -192,10 +192,10 @@ class BlockBlobService(BaseBlobService):
         )
 
     def put_block_list(
-        self, container_name, blob_name, block_list, content_settings=None,
-        metadata=None, validate_content=False, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None,
-        timeout=None):
+            self, container_name, blob_name, block_list, content_settings=None,
+            metadata=None, validate_content=False, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None,
+            timeout=None):
         '''
         Writes a blob by specifying the list of block IDs that make up the blob.
         In order to be written as part of a blob, a block must have been
@@ -214,12 +214,12 @@ class BlockBlobService(BaseBlobService):
             Name of existing blob.
         :param block_list:
             A list of :class:`~azure.storeage.blob.models.BlobBlock` containing the block ids and block state.
-        :type block_list: list of :class:`~azure.storage.blob.models.BlobBlock`
+        :type block_list: list(:class:`~azure.storage.blob.models.BlobBlock`)
         :param ~azure.storage.blob.models.ContentSettings content_settings:
             ContentSettings object used to set properties on the blob.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash of the block list content. The storage
             service checks the hash of the block list content that has arrived
@@ -259,19 +259,19 @@ class BlockBlobService(BaseBlobService):
         _validate_encryption_unsupported(self.require_encryption, self.key_encryption_key)
 
         return self._put_block_list(
-                    container_name,
-                    blob_name,
-                    block_list,
-                    content_settings=content_settings,
-                    metadata=metadata,
-                    validate_content=validate_content,
-                    lease_id=lease_id,
-                    if_modified_since=if_modified_since,
-                    if_unmodified_since=if_unmodified_since,
-                    if_match=if_match,
-                    if_none_match=if_none_match,
-                    timeout=timeout
-                )
+            container_name,
+            blob_name,
+            block_list,
+            content_settings=content_settings,
+            metadata=metadata,
+            validate_content=validate_content,
+            lease_id=lease_id,
+            if_modified_since=if_modified_since,
+            if_unmodified_since=if_unmodified_since,
+            if_match=if_match,
+            if_none_match=if_none_match,
+            timeout=timeout
+        )
 
     def get_block_list(self, container_name, blob_name, snapshot=None,
                        block_list_type=None, lease_id=None, timeout=None):
@@ -320,13 +320,13 @@ class BlockBlobService(BaseBlobService):
 
         return self._perform_request(request, _convert_xml_to_block_list)
 
-    #----Convenience APIs-----------------------------------------------------
+    # ----Convenience APIs-----------------------------------------------------
 
     def create_blob_from_path(
-        self, container_name, blob_name, file_path, content_settings=None,
-        metadata=None, validate_content=False, progress_callback=None,
-        max_connections=2, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, file_path, content_settings=None,
+            metadata=None, validate_content=False, progress_callback=None,
+            max_connections=2, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
         '''
         Creates a new blob from a file path, or updates the content of an
         existing blob, with automatic chunking and progress notifications.
@@ -341,7 +341,7 @@ class BlockBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each chunk of the blob. The storage
             service checks the hash of the content that has arrived with the hash
@@ -353,7 +353,7 @@ class BlockBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use when the blob size exceeds
             64MB.
@@ -394,28 +394,28 @@ class BlockBlobService(BaseBlobService):
         count = path.getsize(file_path)
         with open(file_path, 'rb') as stream:
             return self.create_blob_from_stream(
-                    container_name=container_name,
-                    blob_name=blob_name,
-                    stream=stream,
-                    count=count,
-                    content_settings=content_settings,
-                    metadata=metadata,
-                    validate_content=validate_content,
-                    lease_id=lease_id,
-                    progress_callback=progress_callback,
-                    max_connections=max_connections,
-                    if_modified_since=if_modified_since,
-                    if_unmodified_since=if_unmodified_since,
-                    if_match=if_match,
-                    if_none_match=if_none_match,
-                    timeout=timeout)
+                container_name=container_name,
+                blob_name=blob_name,
+                stream=stream,
+                count=count,
+                content_settings=content_settings,
+                metadata=metadata,
+                validate_content=validate_content,
+                lease_id=lease_id,
+                progress_callback=progress_callback,
+                max_connections=max_connections,
+                if_modified_since=if_modified_since,
+                if_unmodified_since=if_unmodified_since,
+                if_match=if_match,
+                if_none_match=if_none_match,
+                timeout=timeout)
 
     def create_blob_from_stream(
-        self, container_name, blob_name, stream, count=None,
-        content_settings=None, metadata=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None, use_byte_buffer=False):
+            self, container_name, blob_name, stream, count=None,
+            content_settings=None, metadata=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None, use_byte_buffer=False):
         '''
         Creates a new blob from a file/stream, or updates the content of
         an existing blob, with automatic chunking and progress
@@ -434,7 +434,7 @@ class BlockBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each chunk of the blob. The storage
             service checks the hash of the content that has arrived with the hash
@@ -446,7 +446,7 @@ class BlockBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use when the blob size exceeds
             64MB. Note that parallel upload requires the stream to be seekable.
@@ -591,11 +591,11 @@ class BlockBlobService(BaseBlobService):
             )
 
     def create_blob_from_bytes(
-        self, container_name, blob_name, blob, index=0, count=None,
-        content_settings=None, metadata=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, blob, index=0, count=None,
+            content_settings=None, metadata=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Creates a new blob from an array of bytes, or updates the content
         of an existing blob, with automatic chunking and progress
@@ -616,7 +616,7 @@ class BlockBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each chunk of the blob. The storage
             service checks the hash of the content that has arrived with the hash
@@ -628,7 +628,7 @@ class BlockBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use when the blob size exceeds
             64MB.
@@ -697,11 +697,11 @@ class BlockBlobService(BaseBlobService):
         )
 
     def create_blob_from_text(
-        self, container_name, blob_name, text, encoding='utf-8',
-        content_settings=None, metadata=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, text, encoding='utf-8',
+            content_settings=None, metadata=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Creates a new blob from str/unicode, or updates the content of an
         existing blob, with automatic chunking and progress notifications.
@@ -718,7 +718,7 @@ class BlockBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each chunk of the blob. The storage
             service checks the hash of the content that has arrived with the hash
@@ -730,7 +730,7 @@ class BlockBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use when the blob size exceeds
             64MB.
@@ -773,22 +773,22 @@ class BlockBlobService(BaseBlobService):
             text = text.encode(encoding)
 
         return self.create_blob_from_bytes(
-                container_name=container_name,
-                blob_name=blob_name,
-                blob=text,
-                index=0,
-                count=len(text),
-                content_settings=content_settings,
-                metadata=metadata,
-                validate_content=validate_content,
-                lease_id=lease_id,
-                progress_callback=progress_callback,
-                max_connections=max_connections,
-                if_modified_since=if_modified_since,
-                if_unmodified_since=if_unmodified_since,
-                if_match=if_match,
-                if_none_match=if_none_match,
-                timeout=timeout)
+            container_name=container_name,
+            blob_name=blob_name,
+            blob=text,
+            index=0,
+            count=len(text),
+            content_settings=content_settings,
+            metadata=metadata,
+            validate_content=validate_content,
+            lease_id=lease_id,
+            progress_callback=progress_callback,
+            max_connections=max_connections,
+            if_modified_since=if_modified_since,
+            if_unmodified_since=if_unmodified_since,
+            if_match=if_match,
+            if_none_match=if_none_match,
+            timeout=timeout)
 
     def set_standard_blob_tier(
         self, container_name, blob_name, standard_blob_tier, timeout=None):
@@ -825,10 +825,10 @@ class BlockBlobService(BaseBlobService):
 
         self._perform_request(request)
 
-    #-----Helper methods------------------------------------
+    # -----Helper methods------------------------------------
     def _put_blob(self, container_name, blob_name, blob, content_settings=None,
                   metadata=None, validate_content=False, lease_id=None, if_modified_since=None,
-                  if_unmodified_since=None, if_match=None,  if_none_match=None,
+                  if_unmodified_since=None, if_match=None, if_none_match=None,
                   timeout=None):
         '''
         Creates a blob or updates an existing blob.
@@ -916,14 +916,13 @@ class BlockBlobService(BaseBlobService):
         return self._perform_request(request, _parse_base_properties)
 
     def _put_block(self, container_name, blob_name, block, block_id,
-                  validate_content=False, lease_id=None, timeout=None):
+                   validate_content=False, lease_id=None, timeout=None):
         '''
         See put_block for more details. This helper method
         allows for encryption or other such special behavior because
         it is safely handled by the library. These behaviors are
         prohibited in the public version of this function.
         '''
-
 
         _validate_not_none('container_name', container_name)
         _validate_not_none('blob_name', blob_name)
@@ -959,10 +958,10 @@ class BlockBlobService(BaseBlobService):
         self._perform_request(request)
 
     def _put_block_list(
-        self, container_name, blob_name, block_list, content_settings=None, 
-        metadata=None, validate_content=False, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, 
-        timeout=None, encryption_data=None):
+            self, container_name, blob_name, block_list, content_settings=None,
+            metadata=None, validate_content=False, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None,
+            timeout=None, encryption_data=None):
         '''
         See put_block_list for more details. This helper method
         allows for encryption or other such special behavior because

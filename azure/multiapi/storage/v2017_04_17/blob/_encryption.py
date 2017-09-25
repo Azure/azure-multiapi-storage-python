@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,26 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-from os import urandom
-from json import(
+from json import (
     dumps,
     loads,
 )
-from .._error import(
-    _validate_not_none,
-    _validate_key_encryption_key_wrap,
-    _ERROR_DATA_NOT_ENCRYPTED,
-)
-from .._encryption import (
+from os import urandom
+
+from cryptography.hazmat.primitives.padding import PKCS7
+
+from ..common._encryption import (
     _generate_encryption_data_dict,
     _generate_AES_CBC_cipher,
     _dict_to_encryption_data,
     _validate_and_unwrap_cek,
     _EncryptionAlgorithm,
 )
-from cryptography.hazmat.primitives.padding import PKCS7
+from ..common._error import (
+    _validate_not_none,
+    _validate_key_encryption_key_wrap,
+    _ERROR_DATA_NOT_ENCRYPTED,
+    _ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM,
+)
+
 
 def _encrypt_blob(blob, key_encryption_key):
     '''
@@ -69,10 +73,11 @@ def _encrypt_blob(blob, key_encryption_key):
     encryptor = cipher.encryptor()
     encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
     encryption_data = _generate_encryption_data_dict(key_encryption_key, content_encryption_key,
-                                                initialization_vector)
+                                                     initialization_vector)
     encryption_data['EncryptionMode'] = 'FullBlob'
 
     return dumps(encryption_data), encrypted_data
+
 
 def _generate_blob_encryption_data(key_encryption_key):
     '''
@@ -92,14 +97,15 @@ def _generate_blob_encryption_data(key_encryption_key):
         content_encryption_key = urandom(32)
         initialization_vector = urandom(16)
         encryption_data = _generate_encryption_data_dict(key_encryption_key,
-                                                            content_encryption_key,
-                                                            initialization_vector)
+                                                         content_encryption_key,
+                                                         initialization_vector)
         encryption_data['EncryptionMode'] = 'FullBlob'
         encryption_data = dumps(encryption_data)
 
-    return (content_encryption_key, initialization_vector, encryption_data)
+    return content_encryption_key, initialization_vector, encryption_data
 
-def _decrypt_blob(require_encryption, key_encryption_key, key_resolver, 
+
+def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
                   response, start_offset, end_offset):
     '''
     Decrypts the given blob contents and returns only the requested range.
@@ -120,7 +126,7 @@ def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
     _validate_not_none('response', response)
     content = response.body
     _validate_not_none('content', content)
-    
+
     try:
         encryption_data = _dict_to_encryption_data(loads(response.headers['x-ms-meta-encryptiondata']))
     except:
@@ -129,7 +135,7 @@ def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
         else:
             return content
 
-    if not(encryption_data.encryption_agent.encryption_algorithm == _EncryptionAlgorithm.AES_CBC_256):
+    if not (encryption_data.encryption_agent.encryption_algorithm == _EncryptionAlgorithm.AES_CBC_256):
         raise ValueError(_ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM)
 
     blob_type = response.headers['x-ms-blob-type']
@@ -138,17 +144,17 @@ def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
     unpad = False
     start_range, end_range = 0, len(content)
     if 'content-range' in response.headers:
-        range = response.headers['content-range']
+        content_range = response.headers['content-range']
         # Format: 'bytes x-y/size'
 
         # Ignore the word 'bytes'
-        range = range.split(' ')
+        content_range = content_range.split(' ')
 
-        range = range[1].split('-')
-        start_range = int(range[0])
-        range = range[1].split('/')
-        end_range = int(range[0])
-        blob_size = int(range[1])
+        content_range = content_range[1].split('-')
+        start_range = int(content_range[0])
+        content_range = content_range[1].split('/')
+        end_range = int(content_range[0])
+        blob_size = int(content_range[1])
 
         if start_offset >= 16:
             iv = content[:16]
@@ -157,7 +163,7 @@ def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
         else:
             iv = encryption_data.content_encryption_IV
 
-        if end_range == blob_size-1:
+        if end_range == blob_size - 1:
             unpad = True
     else:
         unpad = True
@@ -169,18 +175,19 @@ def _decrypt_blob(require_encryption, key_encryption_key, key_resolver,
     content_encryption_key = _validate_and_unwrap_cek(encryption_data, key_encryption_key, key_resolver)
     cipher = _generate_AES_CBC_cipher(content_encryption_key, iv)
     decryptor = cipher.decryptor()
-    
+
     content = decryptor.update(content) + decryptor.finalize()
     if unpad:
         unpadder = PKCS7(128).unpadder()
         content = unpadder.update(content) + unpadder.finalize()
 
-    return content[start_offset : len(content) - end_offset]
+    return content[start_offset: len(content) - end_offset]
+
 
 def _get_blob_encryptor_and_padder(cek, iv, should_pad):
     encryptor = None
     padder = None
-        
+
     if cek is not None and iv is not None:
         cipher = _generate_AES_CBC_cipher(cek, iv)
         encryptor = cipher.encryptor()

@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+from azure.common import AzureException
 from dateutil import parser
-from .._error import AzureException
+
 try:
     from xml.etree import cElementTree as ETree
 except ImportError:
     from xml.etree import ElementTree as ETree
-from .._common_conversion import (
+from ..common._common_conversion import (
     _decode_base64_to_text,
     _to_str,
+    _get_content_md5
 )
-from .._deserialization import (
+from ..common._deserialization import (
     _parse_properties,
     _int_to_str,
     _parse_metadata,
@@ -44,27 +46,28 @@ from .models import (
     BlobPrefix,
 )
 from ._encryption import _decrypt_blob
-from ..models import _list
-from .._error import(
+from ..common.models import _list
+from ..common._error import (
     _validate_content_match,
     _ERROR_DECRYPTION_FAILURE,
 )
-from .._common_conversion import _get_content_md5
+
 
 def _parse_base_properties(response):
     '''
     Extracts basic response headers.
-    '''   
+    '''
     resource_properties = ResourceProperties()
     resource_properties.last_modified = parser.parse(response.headers.get('last-modified'))
     resource_properties.etag = response.headers.get('etag')
 
     return resource_properties
 
+
 def _parse_page_properties(response):
     '''
     Extracts page response headers.
-    '''   
+    '''
     put_page = PageBlobProperties()
     put_page.last_modified = parser.parse(response.headers.get('last-modified'))
     put_page.etag = response.headers.get('etag')
@@ -72,10 +75,11 @@ def _parse_page_properties(response):
 
     return put_page
 
+
 def _parse_append_block(response):
     '''
     Extracts append block response headers.
-    '''   
+    '''
     append_block = AppendBlockProperties()
     append_block.last_modified = parser.parse(response.headers.get('last-modified'))
     append_block.etag = response.headers.get('etag')
@@ -84,26 +88,28 @@ def _parse_append_block(response):
 
     return append_block
 
+
 def _parse_snapshot_blob(response, name):
     '''
     Extracts snapshot return header.
-    '''   
+    '''
     snapshot = response.headers.get('x-ms-snapshot')
 
     return _parse_blob(response, name, snapshot)
+
 
 def _parse_lease(response):
     '''
     Extracts lease time and ID return headers.
     '''
-    lease = {}
-    lease['time'] = response.headers.get('x-ms-lease-time')
+    lease = {'time': response.headers.get('x-ms-lease-time')}
     if lease['time']:
         lease['time'] = _int_to_str(lease['time'])
 
     lease['id'] = response.headers.get('x-ms-lease-id')
 
     return lease
+
 
 def _parse_blob(response, name, snapshot, validate_content=False, require_encryption=False,
                 key_encryption_key=None, key_resolver_function=None, start_offset=None, end_offset=None):
@@ -126,13 +132,14 @@ def _parse_blob(response, name, snapshot, validate_content=False, require_encryp
         _validate_content_match(response.headers['content-md5'], computed_md5)
 
     if key_encryption_key is not None or key_resolver_function is not None:
-            try:
-                response.body = _decrypt_blob(require_encryption, key_encryption_key, key_resolver_function,
-                                              response, start_offset, end_offset)
-            except:
-                raise AzureException(_ERROR_DECRYPTION_FAILURE)
+        try:
+            response.body = _decrypt_blob(require_encryption, key_encryption_key, key_resolver_function,
+                                          response, start_offset, end_offset)
+        except:
+            raise AzureException(_ERROR_DECRYPTION_FAILURE)
 
     return Blob(name, snapshot, response.body, props, metadata)
+
 
 def _parse_container(response, name):
     if response is None:
@@ -142,11 +149,13 @@ def _parse_container(response, name):
     props = _parse_properties(response, ContainerProperties)
     return Container(name, props, metadata)
 
+
 def _convert_xml_to_signed_identifiers_and_access(response):
     acl = _convert_xml_to_signed_identifiers(response)
     acl.public_access = response.headers.get('x-ms-blob-public-access')
 
     return acl
+
 
 def _convert_xml_to_containers(response):
     '''
@@ -179,7 +188,7 @@ def _convert_xml_to_containers(response):
 
     containers = _list()
     list_element = ETree.fromstring(response.body)
-    
+
     # Set next marker
     setattr(containers, 'next_marker', list_element.findtext('NextMarker'))
 
@@ -205,11 +214,12 @@ def _convert_xml_to_containers(response):
         container.properties.lease_state = properties_element.findtext('LeaseState')
         container.properties.lease_duration = properties_element.findtext('LeaseDuration')
         container.properties.public_access = properties_element.findtext('PublicAccess')
-        
+
         # Add container to list
         containers.append(container)
 
     return containers
+
 
 LIST_BLOBS_ATTRIBUTE_MAP = {
     'Last-Modified': (None, 'last_modified', parser.parse),
@@ -236,6 +246,7 @@ LIST_BLOBS_ATTRIBUTE_MAP = {
     'AccessTier': (None, 'blob_tier', _to_str),
     'ArchiveStatus': (None, 'rehydration_status', _to_str)
 }
+
 
 def _convert_xml_to_blob_list(response):
     '''
@@ -285,7 +296,7 @@ def _convert_xml_to_blob_list(response):
     if response is None or response.body is None:
         return None
 
-    blob_list = _list()    
+    blob_list = _list()
     list_element = ETree.fromstring(response.body)
 
     setattr(blob_list, 'next_marker', list_element.findtext('NextMarker'))
@@ -309,7 +320,7 @@ def _convert_xml_to_blob_list(response):
             for property_element in properties_element:
                 info = LIST_BLOBS_ATTRIBUTE_MAP.get(property_element.tag)
                 if info is None:
-                    setattr(blob.properties, property_element.tag, _to_str(property_element.text))                   
+                    setattr(blob.properties, property_element.tag, _to_str(property_element.text))
                 elif info[0] is None:
                     setattr(blob.properties, info[1], info[2](property_element.text))
                 else:
@@ -322,11 +333,12 @@ def _convert_xml_to_blob_list(response):
             blob.metadata = dict()
             for metadata_element in metadata_root_element:
                 blob.metadata[metadata_element.tag] = metadata_element.text
-        
+
         # Add blob to list
         blob_list.append(blob)
 
     return blob_list
+
 
 def _convert_xml_to_block_list(response):
     '''
@@ -375,6 +387,7 @@ def _convert_xml_to_block_list(response):
 
     return block_list
 
+
 def _convert_xml_to_page_ranges(response):
     '''
     <?xml version="1.0" encoding="utf-8"?>
@@ -406,7 +419,7 @@ def _convert_xml_to_page_ranges(response):
         elif page_range_element.tag == 'ClearRange':
             is_cleared = True
         else:
-            pass # ignore any unrecognized Page Range types
+            pass  # ignore any unrecognized Page Range types
 
         page_list.append(
             PageRange(

@@ -1,4 +1,4 @@
-﻿# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,34 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-import sys
+from io import (BytesIO, IOBase, SEEK_CUR, SEEK_END, SEEK_SET, UnsupportedOperation)
+from math import ceil
 from threading import Lock
-from time import sleep
 
-from cryptography.hazmat.primitives.padding import PKCS7
-from .._common_conversion import _encode_base64
-from .._serialization import (
+from ..common._common_conversion import _encode_base64
+from ..common._error import _ERROR_VALUE_SHOULD_BE_SEEKABLE_STREAM
+from ..common._serialization import (
     url_quote,
     _get_data_bytes_only,
     _len_plus
 )
-from ._encryption import(
+from ._encryption import (
     _get_blob_encryptor_and_padder,
 )
-from azure.common import (
-    AzureHttpError,
-)
-from io import (BytesIO, IOBase, SEEK_CUR, SEEK_END, SEEK_SET, UnsupportedOperation)
 from .models import BlobBlock
-from math import ceil
-from .._error import _ERROR_VALUE_SHOULD_BE_SEEKABLE_STREAM
+
 
 def _upload_blob_chunks(blob_service, container_name, blob_name,
                         blob_size, block_size, stream, max_connections,
-                        progress_callback, validate_content, lease_id, uploader_class, 
+                        progress_callback, validate_content, lease_id, uploader_class,
                         maxsize_condition=None, if_match=None, timeout=None,
                         content_encryption_key=None, initialization_vector=None, resource_properties=None):
-
     encryptor, padder = _get_blob_encryptor_and_padder(content_encryption_key, initialization_vector,
                                                        uploader_class is not _PageBlobChunkUploader)
 
@@ -111,11 +105,11 @@ def _upload_blob_chunks(blob_service, container_name, blob_name,
 
     return range_ids
 
+
 def _upload_blob_substream_blocks(blob_service, container_name, blob_name,
                                   blob_size, block_size, stream, max_connections,
                                   progress_callback, validate_content, lease_id, uploader_class,
                                   maxsize_condition=None, if_match=None, timeout=None):
-
     uploader = uploader_class(
         blob_service,
         container_name,
@@ -150,6 +144,7 @@ def _upload_blob_substream_blocks(blob_service, container_name, blob_name,
 
     return range_ids
 
+
 class _BlobChunkUploader(object):
     def __init__(self, blob_service, container_name, blob_name, blob_size,
                  chunk_size, stream, parallel, progress_callback,
@@ -183,7 +178,7 @@ class _BlobChunkUploader(object):
             # Buffer until we either reach the end of the stream or get a whole chunk.
             while True:
                 if self.blob_size:
-                    read_size = min(self.chunk_size-len(data), self.blob_size - (index + len(data)))
+                    read_size = min(self.chunk_size - len(data), self.blob_size - (index + len(data)))
                 temp = self.stream.read(read_size)
                 temp = _get_data_bytes_only('temp', temp)
                 data += temp
@@ -226,7 +221,7 @@ class _BlobChunkUploader(object):
             self.progress_callback(total, self.blob_size)
 
     def _upload_chunk_with_progress(self, chunk_offset, chunk_data):
-        range_id = self._upload_chunk(chunk_offset, chunk_data) 
+        range_id = self._upload_chunk(chunk_offset, chunk_data)
         self._update_progress(len(chunk_data))
         return range_id
 
@@ -259,6 +254,7 @@ class _BlobChunkUploader(object):
     def set_response_properties(self, resp):
         self.etag = resp.etag
         self.last_modified = resp.last_modified
+
 
 class _BlockBlobChunkUploader(_BlobChunkUploader):
     def _upload_chunk(self, chunk_offset, chunk_data):
@@ -310,6 +306,7 @@ class _PageBlobChunkUploader(_BlobChunkUploader):
 
         self.set_response_properties(resp)
 
+
 class _AppendBlobChunkUploader(_BlobChunkUploader):
     def _upload_chunk(self, chunk_offset, chunk_data):
         if not hasattr(self, 'current_length'):
@@ -337,6 +334,7 @@ class _AppendBlobChunkUploader(_BlobChunkUploader):
             )
 
         self.set_response_properties(resp)
+
 
 class _SubStream(IOBase):
     def __init__(self, wrapped_stream, stream_begin_index, length, lockObj):
@@ -423,16 +421,16 @@ class _SubStream(IOBase):
 
     def seek(self, offset, whence=0):
         if whence is SEEK_SET:
-            startIndex = 0
+            start_index = 0
         elif whence is SEEK_CUR:
-            startIndex = self._position
+            start_index = self._position
         elif whence is SEEK_END:
-            startIndex = self._length
+            start_index = self._length
             offset = - offset
         else:
             raise ValueError("Invalid argument for the 'whence' parameter.")
 
-        pos = startIndex + offset
+        pos = start_index + offset
 
         if pos > self._length:
             pos = self._length

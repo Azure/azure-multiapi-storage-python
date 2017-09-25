@@ -12,25 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-import sys
-
-from ..common._error import (
-    _validate_type_bytes,
+from ._constants import (
+    __author__,
+    __version__,
+    X_MS_VERSION,
 )
-
-_ERROR_MESSAGE_SHOULD_BE_UNICODE = 'message should be of type unicode.'
-_ERROR_MESSAGE_SHOULD_BE_STR = 'message should be of type str.'
-_ERROR_MESSAGE_NOT_BASE64 = 'message is not a valid base64 value.'
-_ERROR_MESSAGE_NOT_ENCRYPTED = 'Message was not encrypted.'
-
-def _validate_message_type_text(param):
-    if sys.version_info < (3,):
-        if not isinstance(param, unicode):
-            raise TypeError(_ERROR_MESSAGE_SHOULD_BE_UNICODE)
-    else:
-        if not isinstance(param, str):
-            raise TypeError(_ERROR_MESSAGE_SHOULD_BE_STR)
-
-
-def _validate_message_type_bytes(param):
-    _validate_type_bytes('message', param)
+from .cloudstorageaccount import CloudStorageAccount
+from .models import (
+    RetentionPolicy,
+    Logging,
+    Metrics,
+    CorsRule,
+    ServiceProperties,
+    AccessPolicy,
+    ResourceTypes,
+    Services,
+    AccountPermissions,
+    Protocol,
+    ServiceStats,
+    GeoReplication,
+    LocationMode,
+    RetryContext,
+)
+from .retry import (
+    ExponentialRetry,
+    LinearRetry,
+    no_retry,
+)
+from .sharedaccesssignature import (
+    SharedAccessSignature,
+)

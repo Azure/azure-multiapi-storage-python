@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import threading
 
-from time import sleep
 
 def _upload_file_chunks(file_service, share_name, directory_name, file_name,
                         file_size, block_size, stream, max_connections,
@@ -48,9 +47,10 @@ def _upload_file_chunks(file_service, share_name, directory_name, file_name,
 
     return range_ids
 
+
 class _FileChunkUploader(object):
-    def __init__(self, file_service, share_name, directory_name, file_name, 
-                 file_size, chunk_size, stream, parallel, progress_callback, 
+    def __init__(self, file_service, share_name, directory_name, file_name,
+                 file_size, chunk_size, stream, parallel, progress_callback,
                  validate_content, timeout):
         self.file_service = file_service
         self.share_name = share_name

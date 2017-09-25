@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,22 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from xml.sax.saxutils import escape as xml_escape
-from xml.sax.saxutils import unescape as xml_unescape
+# --------------------------------------------------------------------------
 from base64 import (
     b64encode,
     b64decode,
 )
+from xml.sax.saxutils import escape as xml_escape
+from xml.sax.saxutils import unescape as xml_unescape
+
 from ._error import (
     _validate_message_type_bytes,
     _validate_message_type_text,
     _ERROR_MESSAGE_NOT_BASE64,
 )
 
-class Queue(object):
 
-    ''' 
+class Queue(object):
+    '''
     Queue class.
      
     :ivar str name: 
@@ -36,7 +37,7 @@ class Queue(object):
         This var is set to None unless the include=metadata param was included 
         for the list queues operation. If this parameter was specified but the 
         queue has no metadata, metadata will be set to an empty dictionary.
-    :vartype metadata: dict mapping str to str
+    :vartype metadata: dict(str, str)
     '''
 
     def __init__(self):
@@ -102,16 +103,16 @@ class QueueMessageFormat:
         '''
         _validate_message_type_text(data)
         return b64encode(data.encode('utf-8')).decode('utf-8')
-     
+
     @staticmethod
-    def text_base64decode(data):   
+    def text_base64decode(data):
         '''
         Base64 decode to unicode text.
         
         :param str data: String data to decode to unicode.
         :return: Base64 decoded string.
         :rtype: str
-        ''' 
+        '''
         try:
             return b64decode(data.encode('utf-8')).decode('utf-8')
         except (ValueError, TypeError):
@@ -129,7 +130,7 @@ class QueueMessageFormat:
         '''
         _validate_message_type_bytes(data)
         return b64encode(data).decode('utf-8')
-     
+
     @staticmethod
     def binary_base64decode(data):
         '''
@@ -138,7 +139,7 @@ class QueueMessageFormat:
         :param str data: Data to decode to a byte string.
         :return: Base64 decoded data.
         :rtype: str
-        ''' 
+        '''
         try:
             return b64decode(data.encode('utf-8'))
         except (ValueError, TypeError):
@@ -156,8 +157,8 @@ class QueueMessageFormat:
         '''
         _validate_message_type_text(data)
         return xml_escape(data)
-       
-    @staticmethod 
+
+    @staticmethod
     def text_xmldecode(data):
         ''' 
         XML decode to unicode text.
@@ -178,7 +179,7 @@ class QueueMessageFormat:
         :rtype: str
         '''
         return data
-        
+
     @staticmethod
     def nodecode(data):
         '''
@@ -192,7 +193,6 @@ class QueueMessageFormat:
 
 
 class QueuePermissions(object):
-
     '''
     QueuePermissions class to be used with :func:`~azure.storage.queue.queueservice.QueueService.generate_queue_shared_access_signature`
     method and for the AccessPolicies used with :func:`~azure.storage.queue.queueservice.QueueService.set_queue_acl`. 
@@ -207,6 +207,7 @@ class QueuePermissions(object):
     :ivar QueuePermissions QueuePermissions.PROCESS: Delete entities.
         Get and delete messages from the queue. 
     '''
+
     def __init__(self, read=False, add=False, update=False, process=False, _str=None):
         '''
         :param bool read:
@@ -227,18 +228,19 @@ class QueuePermissions(object):
         self.add = add or ('a' in _str)
         self.update = update or ('u' in _str)
         self.process = process or ('p' in _str)
-    
+
     def __or__(self, other):
         return QueuePermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return QueuePermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('a' if self.add else '') +
                 ('u' if self.update else '') +
                 ('p' if self.process else ''))
+
 
 QueuePermissions.READ = QueuePermissions(read=True)
 QueuePermissions.ADD = QueuePermissions(add=True)

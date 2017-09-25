@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,23 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import sys
 import types
 import uuid
-
 from datetime import datetime
 from json import (
     dumps,
 )
-from math import(
+from math import (
     isnan,
 )
-from .._common_conversion import (
+
+from ..common._common_conversion import (
     _encode_base64,
     _to_str,
 )
-from .._serialization import (
+from ..common._serialization import (
     _to_utc_datetime,
 )
 from ._error import (
@@ -53,11 +53,13 @@ _DEFAULT_CONTENT_TYPE_HEADER = ('Content-Type', 'application/json')
 _DEFAULT_PREFER_HEADER = ('Prefer', 'return-no-content')
 _SUB_HEADERS = ['If-Match', 'Prefer', 'Accept', 'Content-Type', 'DataServiceVersion']
 
+
 def _get_entity_path(table_name, partition_key, row_key):
     return '/{0}(PartitionKey=\'{1}\',RowKey=\'{2}\')'.format(
-            _to_str(table_name), 
-            _to_str(partition_key), 
-            _to_str(row_key))
+        _to_str(table_name),
+        _to_str(partition_key),
+        _to_str(row_key))
+
 
 def _update_storage_table_header(request):
     ''' add additional headers for storage table request. '''
@@ -66,14 +68,18 @@ def _update_storage_table_header(request):
     request.headers['DataServiceVersion'] = '3.0;NetFx'
     request.headers['MaxDataServiceVersion'] = '3.0'
 
+
 def _to_entity_binary(value):
-   return EdmType.BINARY, _encode_base64(value)
+    return EdmType.BINARY, _encode_base64(value)
+
 
 def _to_entity_bool(value):
     return None, value
 
+
 def _to_entity_datetime(value):
     return EdmType.DATETIME, _to_utc_datetime(value)
+
 
 def _to_entity_float(value):
     if isnan(value):
@@ -84,32 +90,38 @@ def _to_entity_float(value):
         return EdmType.DOUBLE, '-Infinity'
     return None, value
 
+
 def _to_entity_guid(value):
-   return EdmType.GUID, str(value)
+    return EdmType.GUID, str(value)
+
 
 def _to_entity_int32(value):
     if sys.version_info < (3,):
         value = long(value)
     else:
         value = int(value)
-    if value >= 2**31 or value < -(2**31):
-        raise TypeError(_ERROR_VALUE_TOO_LARGE.format(str(value), EdmType.INT32))       
+    if value >= 2 ** 31 or value < -(2 ** 31):
+        raise TypeError(_ERROR_VALUE_TOO_LARGE.format(str(value), EdmType.INT32))
     return None, value
+
 
 def _to_entity_int64(value):
     if sys.version_info < (3,):
         ivalue = long(value)
     else:
         ivalue = int(value)
-    if ivalue >= 2**63 or ivalue < -(2**63):
-        raise TypeError(_ERROR_VALUE_TOO_LARGE.format(str(value), EdmType.INT64))       
+    if ivalue >= 2 ** 63 or ivalue < -(2 ** 63):
+        raise TypeError(_ERROR_VALUE_TOO_LARGE.format(str(value), EdmType.INT64))
     return EdmType.INT64, str(value)
+
 
 def _to_entity_str(value):
     return None, value
 
+
 def _to_entity_none(value):
     return None, None
+
 
 # Conversion from Python type to a function which returns a tuple of the
 # type string and content string.
@@ -204,6 +216,7 @@ def _convert_table_to_json(table_name):
     '''
     return _convert_entity_to_json({'TableName': table_name})
 
+
 def _convert_batch_to_json(batch_requests):
     '''
     Create json to send for an array of batch requests.
@@ -214,10 +227,9 @@ def _convert_batch_to_json(batch_requests):
     batch_boundary = b'batch_' + _new_boundary()
     changeset_boundary = b'changeset_' + _new_boundary()
 
-    body = []
-    body.append(b'--' + batch_boundary + b'\n')
-    body.append(b'Content-Type: multipart/mixed; boundary=')
-    body.append(changeset_boundary + b'\n\n')
+    body = [b'--' + batch_boundary + b'\n',
+            b'Content-Type: multipart/mixed; boundary=',
+            changeset_boundary + b'\n\n']
 
     content_id = 1
 

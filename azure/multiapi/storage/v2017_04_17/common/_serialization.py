@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,15 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import sys
 import uuid
 from datetime import date
-from dateutil.tz import tzutc
+from io import (BytesIO, IOBase, SEEK_SET, SEEK_END, UnsupportedOperation)
+from os import fstat
 from time import time
 from wsgiref.handlers import format_date_time
-from os import fstat
-from io import (BytesIO, IOBase, SEEK_SET, SEEK_END, UnsupportedOperation)
+
+from dateutil.tz import tzutc
 
 if sys.version_info >= (3,):
     from urllib.parse import quote as url_quote
@@ -47,6 +48,7 @@ from ._common_conversion import (
     _str,
 )
 
+
 def _to_utc_datetime(value):
     # Azure expects the date value passed in to be UTC.
     # Azure will always return values as UTC.
@@ -54,6 +56,7 @@ def _to_utc_datetime(value):
     if value.tzinfo:
         value = value.astimezone(tzutc())
     return value.strftime('%Y-%m-%dT%H:%M:%SZ')
+
 
 def _update_request(request):
     # Verify body
@@ -83,6 +86,7 @@ def _update_request(request):
     # Encode and optionally add local storage prefix to path
     request.path = url_quote(request.path, '/()$=\',~')
 
+
 def _add_metadata_headers(metadata, request):
     if metadata:
         if not request.headers:
@@ -90,9 +94,11 @@ def _add_metadata_headers(metadata, request):
         for name, value in metadata.items():
             request.headers['x-ms-meta-' + name] = value
 
+
 def _add_date_header(request):
     current_time = format_date_time(time())
     request.headers['x-ms-date'] = current_time
+
 
 def _get_data_bytes_only(param_name, param_value):
     '''Validates the request body passed in and converts it to bytes
@@ -138,11 +144,12 @@ def _get_request_body(request_body):
 
     return request_body
 
+
 def _convert_signed_identifiers_to_xml(signed_identifiers):
     if signed_identifiers is None:
         return ''
 
-    sis = ETree.Element('SignedIdentifiers');
+    sis = ETree.Element('SignedIdentifiers')
     for id, access_policy in signed_identifiers.items():
         # Root signed identifers element
         si = ETree.SubElement(sis, 'SignedIdentifier')
@@ -177,8 +184,9 @@ def _convert_signed_identifiers_to_xml(signed_identifiers):
     finally:
         output = stream.getvalue()
         stream.close()
-    
+
     return output
+
 
 def _convert_service_properties_to_xml(logging, hour_metrics, minute_metrics, cors, target_version=None):
     '''
@@ -223,7 +231,7 @@ def _convert_service_properties_to_xml(logging, hour_metrics, minute_metrics, co
         </Cors>
     </StorageServiceProperties>
     '''
-    service_properties_element = ETree.Element('StorageServiceProperties');
+    service_properties_element = ETree.Element('StorageServiceProperties')
 
     # Logging
     if logging:
@@ -265,14 +273,16 @@ def _convert_service_properties_to_xml(logging, hour_metrics, minute_metrics, co
     # Add xml declaration and serialize
     try:
         stream = BytesIO()
-        ETree.ElementTree(service_properties_element).write(stream, xml_declaration=True, encoding='utf-8', method='xml')
+        ETree.ElementTree(service_properties_element).write(stream, xml_declaration=True, encoding='utf-8',
+                                                            method='xml')
     except:
         raise
     finally:
         output = stream.getvalue()
         stream.close()
-    
+
     return output
+
 
 def _convert_metrics_to_xml(metrics, root):
     '''
@@ -298,6 +308,7 @@ def _convert_metrics_to_xml(metrics, root):
     retention_element = ETree.SubElement(root, 'RetentionPolicy')
     _convert_retention_policy_to_xml(metrics.retention_policy, retention_element)
 
+
 def _convert_retention_policy_to_xml(retention_policy, root):
     '''
     <Enabled>true|false</Enabled>
@@ -309,6 +320,7 @@ def _convert_retention_policy_to_xml(retention_policy, root):
     # Days
     if retention_policy.enabled and retention_policy.days:
         ETree.SubElement(root, 'Days').text = str(retention_policy.days)
+
 
 def _len_plus(data):
     length = None
@@ -330,10 +342,10 @@ def _len_plus(data):
 
         # If the stream is seekable and tell() is implemented, calculate the stream size.
         try:
-            currentPosition = data.tell()
+            current_position = data.tell()
             data.seek(0, SEEK_END)
-            length = data.tell() - currentPosition
-            data.seek(currentPosition, SEEK_SET)
+            length = data.tell() - current_position
+            data.seek(current_position, SEEK_SET)
         except (AttributeError, UnsupportedOperation):
             pass
 

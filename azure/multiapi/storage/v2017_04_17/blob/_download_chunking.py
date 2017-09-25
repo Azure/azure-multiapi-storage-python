@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,19 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import threading
 
-from time import sleep
-from azure.common import (
-    AzureHttpError,
-)
-from .._error import _ERROR_NO_SINGLE_THREAD_CHUNKING
+from ..common._error import _ERROR_NO_SINGLE_THREAD_CHUNKING
+
 
 def _download_blob_chunks(blob_service, container_name, blob_name, snapshot,
-                          download_size, block_size, progress, start_range, end_range, 
-                          stream, max_connections, progress_callback, validate_content, 
-                          lease_id, if_modified_since, if_unmodified_since, if_match, 
+                          download_size, block_size, progress, start_range, end_range,
+                          stream, max_connections, progress_callback, validate_content,
+                          lease_id, if_modified_since, if_unmodified_since, if_match,
                           if_none_match, timeout, operation_context):
     if max_connections <= 1:
         raise ValueError(_ERROR_NO_SINGLE_THREAD_CHUNKING.format('blob'))
@@ -37,7 +34,7 @@ def _download_blob_chunks(blob_service, container_name, blob_name, snapshot,
         block_size,
         progress,
         start_range,
-        end_range,       
+        end_range,
         stream,
         progress_callback,
         validate_content,
@@ -54,10 +51,11 @@ def _download_blob_chunks(blob_service, container_name, blob_name, snapshot,
     executor = concurrent.futures.ThreadPoolExecutor(max_connections)
     result = list(executor.map(downloader.process_chunk, downloader.get_chunk_offsets()))
 
+
 class _BlobChunkDownloader(object):
     def __init__(self, blob_service, container_name, blob_name, snapshot, download_size,
-                 chunk_size, progress, start_range, end_range, stream, 
-                 progress_callback, validate_content, lease_id, if_modified_since, 
+                 chunk_size, progress, start_range, end_range, stream,
+                 progress_callback, validate_content, lease_id, if_modified_since,
                  if_unmodified_since, if_match, if_none_match, timeout, operation_context):
         self.blob_service = blob_service
         self.container_name = container_name
@@ -66,7 +64,7 @@ class _BlobChunkDownloader(object):
         self.chunk_size = chunk_size
 
         self.download_size = download_size
-        self.start_index = start_range    
+        self.start_index = start_range
         self.blob_end = end_range
 
         self.stream = stream
@@ -80,10 +78,10 @@ class _BlobChunkDownloader(object):
 
         self.validate_content = validate_content
         self.lease_id = lease_id
-        self.if_modified_since=if_modified_since
-        self.if_unmodified_since=if_unmodified_since
-        self.if_match=if_match
-        self.if_none_match=if_none_match
+        self.if_modified_since = if_modified_since
+        self.if_unmodified_since = if_unmodified_since
+        self.if_match = if_match
+        self.if_none_match = if_none_match
 
     def get_chunk_offsets(self):
         index = self.start_index

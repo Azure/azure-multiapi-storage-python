@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,54 +11,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-from .._error import(
-    _ERROR_UNSUPPORTED_ENCRYPTION_VERSION,
-    _ERROR_DECRYPTION_FAILURE,
-    _ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM,
-    _ERROR_DATA_NOT_ENCRYPTED,
-    _validate_not_none,
-    _validate_key_encryption_key_wrap,
-    _validate_key_encryption_key_unwrap,
-    _validate_kek_id,
+import os
+from copy import deepcopy
+from json import (
+    dumps,
+    loads,
 )
-from .._constants import(
-    _ENCRYPTION_PROTOCOL_V1,
+
+from azure.common import AzureException
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.hashes import (
+    Hash,
+    SHA256,
 )
-from .._common_conversion import(
+from cryptography.hazmat.primitives.padding import PKCS7
+
+from ..common._common_conversion import (
     _decode_base64_to_bytes,
 )
-from .._encryption import(
+from ..common._constants import (
+    _ENCRYPTION_PROTOCOL_V1,
+)
+from ..common._encryption import (
     _generate_encryption_data_dict,
     _dict_to_encryption_data,
     _generate_AES_CBC_cipher,
     _validate_and_unwrap_cek,
-    _EncryptionData,
-    _EncryptionAgent,
-    _WrappedContentKey,
     _EncryptionAlgorithm
 )
-from ._error import(
-    _ERROR_UNSUPPORTED_TYPE_FOR_ENCRYPTION,
+from ..common._error import (
+    _ERROR_DECRYPTION_FAILURE,
+    _ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM,
+    _validate_not_none,
+    _validate_key_encryption_key_wrap,
 )
-from .models import(
+from ._error import (
+    _ERROR_UNSUPPORTED_TYPE_FOR_ENCRYPTION,
+    _ERROR_ENTITY_NOT_ENCRYPTED
+)
+from .models import (
     Entity,
     EntityProperty,
     EdmType,
 )
-from json import(
-    dumps,
-    loads,
-)
-import os
-from copy import deepcopy
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.padding import PKCS7
-from cryptography.hazmat.primitives.hashes import(
-    Hash,
-    SHA256,
-)
+
 
 def _encrypt_entity(entity, key_encryption_key, encryption_resolver):
     '''
@@ -98,8 +96,8 @@ def _encrypt_entity(entity, key_encryption_key, encryption_resolver):
         # If the property resolver says it should be encrypted
         # or it is an EntityProperty with the 'encrypt' property set.
         if (isinstance(value, EntityProperty) and value.encrypt) or \
-            (encryption_resolver is not None \
-            and encryption_resolver(entity['PartitionKey'], entity['RowKey'], key)):
+                (encryption_resolver is not None \
+                         and encryption_resolver(entity['PartitionKey'], entity['RowKey'], key)):
 
             # Only strings can be encrypted and None is not an instance of str.
             if isinstance(value, EntityProperty):
@@ -108,9 +106,9 @@ def _encrypt_entity(entity, key_encryption_key, encryption_resolver):
                 else:
                     raise ValueError(_ERROR_UNSUPPORTED_TYPE_FOR_ENCRYPTION)
             if not isinstance(value, str):
-                raise ValueError(_ERROR_UNSUPPORTED_TYPE_FOR_ENCRYPTION) 
+                raise ValueError(_ERROR_UNSUPPORTED_TYPE_FOR_ENCRYPTION)
 
-            # Value is now confirmed to hold a valid string value to be encrypted
+                # Value is now confirmed to hold a valid string value to be encrypted
             # and should be added to the list of encrypted properties.
             encrypted_properties.append(key)
 
@@ -137,11 +135,11 @@ def _encrypt_entity(entity, key_encryption_key, encryption_resolver):
         encrypted_entity[key] = value
 
     encrypted_properties = dumps(encrypted_properties)
-    
+
     # Generate the metadata iv.
-    metadataIV = _generate_property_iv(entity_initialization_vector, 
-                          entity['PartitionKey'], entity['RowKey'],
-                          '_ClientEncryptionMetadata2', False)
+    metadataIV = _generate_property_iv(entity_initialization_vector,
+                                       entity['PartitionKey'], entity['RowKey'],
+                                       '_ClientEncryptionMetadata2', False)
 
     encrypted_properties = encrypted_properties.encode('utf-8')
 
@@ -160,6 +158,7 @@ def _encrypt_entity(entity, key_encryption_key, encryption_resolver):
 
     encrypted_entity['_ClientEncryptionMetadata1'] = dumps(encryption_data)
     return encrypted_entity
+
 
 def _decrypt_entity(entity, encrypted_properties_list, content_encryption_key, entityIV, isJavaV1):
     '''
@@ -183,7 +182,7 @@ def _decrypt_entity(entity, encrypted_properties_list, content_encryption_key, e
     _validate_not_none('entity', entity)
 
     decrypted_entity = deepcopy(entity)
-    try:   
+    try:
         for property in entity.keys():
             if property in encrypted_properties_list:
                 value = entity[property]
@@ -197,13 +196,13 @@ def _decrypt_entity(entity, encrypted_properties_list, content_encryption_key, e
                 # Decrypt the property.
                 decryptor = cipher.decryptor()
                 decrypted_data = (decryptor.update(value.value) + decryptor.finalize())
-        
+
                 # Unpad the data.
                 unpadder = PKCS7(128).unpadder()
                 decrypted_data = (unpadder.update(decrypted_data) + unpadder.finalize())
 
                 decrypted_data = decrypted_data.decode('utf-8')
-        
+
                 decrypted_entity[property] = decrypted_data
 
         decrypted_entity.pop('_ClientEncryptionMetadata1')
@@ -211,6 +210,7 @@ def _decrypt_entity(entity, encrypted_properties_list, content_encryption_key, e
         return decrypted_entity
     except:
         raise AzureException(_ERROR_DECRYPTION_FAILURE)
+
 
 def _extract_encryption_metadata(entity, require_encryption, key_encryption_key, key_resolver):
     '''
@@ -235,32 +235,32 @@ def _extract_encryption_metadata(entity, require_encryption, key_encryption_key,
     :rtype: tuple (bytes[], list, bytes[], bool)
     '''
     _validate_not_none('entity', entity)
-    
+
     try:
         encrypted_properties_list = _decode_base64_to_bytes(entity['_ClientEncryptionMetadata2'])
         encryption_data = entity['_ClientEncryptionMetadata1']
         encryption_data = _dict_to_encryption_data(loads(encryption_data))
-    except Exception as e:
+    except Exception:
         # Message did not have properly formatted encryption metadata.
         if require_encryption:
             raise ValueError(_ERROR_ENTITY_NOT_ENCRYPTED)
         else:
-            return (None,None,None,None)
+            return None, None, None, None
 
-    if not(encryption_data.encryption_agent.encryption_algorithm == _EncryptionAlgorithm.AES_CBC_256):
+    if not (encryption_data.encryption_agent.encryption_algorithm == _EncryptionAlgorithm.AES_CBC_256):
         raise ValueError(_ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM)
 
     content_encryption_key = _validate_and_unwrap_cek(encryption_data, key_encryption_key, key_resolver)
 
     # Special check for compatibility with Java V1 encryption protocol.
     isJavaV1 = (encryption_data.key_wrapping_metadata is None) or \
-        ((encryption_data.encryption_agent.protocol == _ENCRYPTION_PROTOCOL_V1) and \
-        'EncryptionLibrary' in encryption_data.key_wrapping_metadata and \
-        'Java' in encryption_data.key_wrapping_metadata['EncryptionLibrary'])
+               ((encryption_data.encryption_agent.protocol == _ENCRYPTION_PROTOCOL_V1) and
+                'EncryptionLibrary' in encryption_data.key_wrapping_metadata and
+                'Java' in encryption_data.key_wrapping_metadata['EncryptionLibrary'])
 
     metadataIV = _generate_property_iv(encryption_data.content_encryption_IV,
-                                      entity['PartitionKey'], entity['RowKey'],
-                                      '_ClientEncryptionMetadata2', isJavaV1)
+                                       entity['PartitionKey'], entity['RowKey'],
+                                       '_ClientEncryptionMetadata2', isJavaV1)
 
     cipher = _generate_AES_CBC_cipher(content_encryption_key, metadataIV)
 
@@ -281,7 +281,8 @@ def _extract_encryption_metadata(entity, require_encryption, key_encryption_key,
     else:
         encrypted_properties_list = loads(encrypted_properties_list)
 
-    return (encryption_data.content_encryption_IV, encrypted_properties_list, content_encryption_key, isJavaV1)
+    return encryption_data.content_encryption_IV, encrypted_properties_list, content_encryption_key, isJavaV1
+
 
 def _generate_property_iv(entity_iv, pk, rk, property_name, isJavaV1):
     '''
@@ -293,7 +294,7 @@ def _generate_property_iv(entity_iv, pk, rk, property_name, isJavaV1):
         digest.update(entity_iv +
                       (rk + pk + property_name).encode('utf-8'))
     else:
-        digest.update(entity_iv + 
+        digest.update(entity_iv +
                       (pk + rk + property_name).encode('utf-8'))
     propertyIV = digest.finalize()
     return propertyIV[:16]

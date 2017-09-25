@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._common_conversion import _to_str
-class Share(object):
+# --------------------------------------------------------------------------
+from ..common._common_conversion import _to_str
 
+
+class Share(object):
     '''
     File share class.
     
@@ -28,16 +29,20 @@ class Share(object):
         for the list shares operation. If this parameter was specified but the 
         share has no metadata, metadata will be set to an empty dictionary.
     :vartype metadata: dict mapping str to str
+    :ivar str snapshot:
+        A DateTime value that uniquely identifies the snapshot. The value of
+        this header indicates the snapshot version, and may be used in
+        subsequent requests to access the snapshot.
     '''
 
-    def __init__(self, name=None, props=None, metadata=None):
+    def __init__(self, name=None, props=None, metadata=None, snapshot=None):
         self.name = name
         self.properties = props or ShareProperties()
         self.metadata = metadata
+        self.snapshot = snapshot
 
 
 class ShareProperties(object):
-
     '''
     File share's properties class.
     
@@ -55,8 +60,8 @@ class ShareProperties(object):
         self.etag = None
         self.quota = None
 
-class Directory(object):
 
+class Directory(object):
     '''
     Directory class.
     
@@ -69,7 +74,7 @@ class Directory(object):
         This var is set to None unless the include=metadata param was included 
         for the list directory operation. If this parameter was specified but the 
         directory has no metadata, metadata will be set to an empty dictionary.
-    :vartype metadata: dict mapping str to str
+    :vartype metadata: dict(str, str)
     '''
 
     def __init__(self, name=None, props=None, metadata=None):
@@ -77,8 +82,8 @@ class Directory(object):
         self.properties = props or DirectoryProperties()
         self.metadata = metadata
 
-class DirectoryProperties(object):
 
+class DirectoryProperties(object):
     '''
     File directory's properties class.
     
@@ -96,8 +101,8 @@ class DirectoryProperties(object):
         self.etag = None
         self.server_encrypted = None
 
-class File(object):
 
+class File(object):
     '''
     File class.
     
@@ -113,7 +118,7 @@ class File(object):
         This var is set to None unless the include=metadata param was included 
         for the list file operation. If this parameter was specified but the 
         file has no metadata, metadata will be set to an empty dictionary.
-    :vartype metadata: dict mapping str to str
+    :vartype metadata: dict(str, str)
     '''
 
     def __init__(self, name=None, content=None, props=None, metadata=None):
@@ -124,7 +129,6 @@ class File(object):
 
 
 class FileProperties(object):
-
     '''
     File Properties.
     
@@ -159,7 +163,6 @@ class FileProperties(object):
 
 
 class ContentSettings(object):
-
     '''
     Used to store the content settings of a file.
 
@@ -187,10 +190,9 @@ class ContentSettings(object):
     '''
 
     def __init__(
-        self, content_type=None, content_encoding=None,
-        content_language=None, content_disposition=None,
-        cache_control=None, content_md5=None):
-        
+            self, content_type=None, content_encoding=None,
+            content_language=None, content_disposition=None,
+            cache_control=None, content_md5=None):
         self.content_type = content_type
         self.content_encoding = content_encoding
         self.content_language = content_language
@@ -259,7 +261,6 @@ class CopyProperties(object):
 
 
 class FileRange(object):
-
     '''
     File Range.
     
@@ -273,8 +274,19 @@ class FileRange(object):
         self.start = start
         self.end = end
 
-class FilePermissions(object):
 
+class DeleteSnapshot(object):
+    '''
+    Required if the Share has associated snapshots. Specifies how to handle the snapshots.
+    '''
+
+    Include = 'include'
+    '''
+    Delete the share and all of its snapshots.
+    '''
+
+
+class FilePermissions(object):
     '''
     FilePermissions class to be used with 
     :func:`~azure.storage.file.fileservice.FileService.generate_file_shared_access_signature` API.
@@ -290,7 +302,8 @@ class FilePermissions(object):
         Create or write content, properties, metadata. Resize the file. Use the file 
         as the destination of a copy operation within the same account.
     '''
-    def __init__(self, read=False, create=False, write=False, delete=False, 
+
+    def __init__(self, read=False, create=False, write=False, delete=False,
                  _str=None):
         '''
         :param bool read:
@@ -313,13 +326,13 @@ class FilePermissions(object):
         self.create = create or ('c' in _str)
         self.write = write or ('w' in _str)
         self.delete = delete or ('d' in _str)
-    
+
     def __or__(self, other):
         return FilePermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return FilePermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('c' if self.create else '') +
@@ -334,7 +347,6 @@ FilePermissions.WRITE = FilePermissions(write=True)
 
 
 class SharePermissions(object):
-
     '''
     SharePermissions class to be used with `azure.storage.file.FileService.generate_share_shared_access_signature`
     method and for the AccessPolicies used with `azure.storage.file.FileService.set_share_acl`. 
@@ -355,7 +367,8 @@ class SharePermissions(object):
         Note: You cannot grant permissions to read or write share properties or 
         metadata with a service SAS. Use an account SAS instead.
     '''
-    def __init__(self, read=False, write=False, delete=False, list=False, 
+
+    def __init__(self, read=False, write=False, delete=False, list=False,
                  _str=None):
         '''
         :param bool read:
@@ -383,18 +396,19 @@ class SharePermissions(object):
         self.write = write or ('w' in _str)
         self.delete = delete or ('d' in _str)
         self.list = list or ('l' in _str)
-    
+
     def __or__(self, other):
         return SharePermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return SharePermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('w' if self.write else '') +
-                ('d' if self.delete else '') + 
+                ('d' if self.delete else '') +
                 ('l' if self.list else ''))
+
 
 SharePermissions.DELETE = SharePermissions(delete=True)
 SharePermissions.LIST = SharePermissions(list=True)

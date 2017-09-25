@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,65 +11,61 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from contextlib import contextmanager
+
 from azure.common import (
     AzureHttpError,
 )
-from .._common_conversion import (
+
+from ..common._auth import (
+    _StorageSASAuthentication,
+    _StorageTableSharedKeyAuthentication,
+)
+from ..common._common_conversion import (
     _int_to_str,
     _to_str,
 )
-from .._error import (
+from ..common._connection import _ServiceParameters
+from ..common._constants import (
+    SERVICE_HOST_BASE,
+    DEFAULT_PROTOCOL,
+    DEV_ACCOUNT_NAME,
+)
+from ..common._deserialization import (
+    _convert_xml_to_service_properties,
+    _convert_xml_to_signed_identifiers,
+    _convert_xml_to_service_stats,
+)
+from ..common._error import (
     _dont_fail_not_exist,
     _dont_fail_on_exist,
     _validate_not_none,
     _ERROR_STORAGE_MISSING_INFO,
     _validate_access_policies,
 )
-from .._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_request_body,
     _update_request,
     _convert_signed_identifiers_to_xml,
     _convert_service_properties_to_xml,
 )
-from .._http import HTTPRequest
-from ..models import (
+from ..common.models import (
     Services,
     ListGenerator,
     _OperationContext,
 )
-from .models import TablePayloadFormat
-from .._auth import (
-    _StorageSASAuthentication,
-    _StorageTableSharedKeyAuthentication,
+from ..common.sharedaccesssignature import (
+    SharedAccessSignature,
 )
-from .._connection import _ServiceParameters
-from .._deserialization import (
-    _convert_xml_to_service_properties,
-    _convert_xml_to_signed_identifiers,
-    _convert_xml_to_service_stats,
-)
-from ._serialization import (
-    _convert_table_to_json,
-    _convert_batch_to_json,
-    _update_storage_table_header,
-    _get_entity_path,
-    _DEFAULT_ACCEPT_HEADER,
-    _DEFAULT_CONTENT_TYPE_HEADER,
-    _DEFAULT_PREFER_HEADER,
-)
+from ..common.storageclient import StorageClient
 from ._deserialization import (
     _convert_json_response_to_entity,
     _convert_json_response_to_tables,
     _convert_json_response_to_entities,
     _parse_batch_response,
     _extract_etag,
-)
-from .._constants import (
-    SERVICE_HOST_BASE,
-    DEFAULT_PROTOCOL,
-    DEV_ACCOUNT_NAME,
 )
 from ._request import (
     _get_entity,
@@ -80,14 +76,20 @@ from ._request import (
     _insert_or_replace_entity,
     _insert_or_merge_entity,
 )
-from ..sharedaccesssignature import (
-    SharedAccessSignature,
+from ._serialization import (
+    _convert_table_to_json,
+    _convert_batch_to_json,
+    _update_storage_table_header,
+    _get_entity_path,
+    _DEFAULT_ACCEPT_HEADER,
+    _DEFAULT_CONTENT_TYPE_HEADER,
+    _DEFAULT_PREFER_HEADER,
 )
-from ..storageclient import StorageClient
+from .models import TablePayloadFormat
 from .tablebatch import TableBatch
 
-class TableService(StorageClient):
 
+class TableService(StorageClient):
     '''
     This is the main class managing Azure Table resources.
 
@@ -125,7 +127,7 @@ class TableService(StorageClient):
         parameters for encryption/decryption must be provided. See the above comments on the key_encryption_key and resolver.
     '''
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, 
+    def __init__(self, account_name=None, account_key=None, sas_token=None,
                  is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
                  request_session=None, connection_string=None, socket_timeout=None):
         '''
@@ -162,16 +164,16 @@ class TableService(StorageClient):
         '''
         service_params = _ServiceParameters.get_service_parameters(
             'table',
-            account_name=account_name, 
-            account_key=account_key, 
-            sas_token=sas_token, 
-            is_emulated=is_emulated, 
-            protocol=protocol, 
+            account_name=account_name,
+            account_key=account_key,
+            sas_token=sas_token,
+            is_emulated=is_emulated,
+            protocol=protocol,
             endpoint_suffix=endpoint_suffix,
             request_session=request_session,
             connection_string=connection_string,
             socket_timeout=socket_timeout)
-            
+
         super(TableService, self).__init__(service_params)
 
         if self.account_key:
@@ -189,8 +191,8 @@ class TableService(StorageClient):
         self.key_resolver_function = None
         self.encryption_resolver_function = None
 
-    def generate_account_shared_access_signature(self, resource_types, permission, 
-                                        expiry, start=None, ip=None, protocol=None):
+    def generate_account_shared_access_signature(self, resource_types, permission,
+                                                 expiry, start=None, ip=None, protocol=None):
         '''
         Generates a shared access signature for the table service.
         Use the returned signature with the sas_token parameter of TableService.
@@ -210,14 +212,14 @@ class TableService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
             If the IP address from which the request originates does not match the IP address
@@ -226,7 +228,7 @@ class TableService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :return: A Shared Access Signature (sas) token.
         :rtype: str
         '''
@@ -234,15 +236,14 @@ class TableService(StorageClient):
         _validate_not_none('self.account_key', self.account_key)
 
         sas = SharedAccessSignature(self.account_name, self.account_key)
-        return sas.generate_account(Services.TABLE, resource_types, permission, 
+        return sas.generate_account(Services.TABLE, resource_types, permission,
                                     expiry, start=start, ip=ip, protocol=protocol)
 
-
-    def generate_table_shared_access_signature(self, table_name, permission=None, 
-                                        expiry=None, start=None, id=None,
-                                        ip=None, protocol=None,
-                                        start_pk=None, start_rk=None, 
-                                        end_pk=None, end_rk=None):
+    def generate_table_shared_access_signature(self, table_name, permission=None,
+                                               expiry=None, start=None, id=None,
+                                               ip=None, protocol=None,
+                                               start_pk=None, start_rk=None,
+                                               end_pk=None, end_rk=None):
         '''
         Generates a shared access signature for the table.
         Use the returned signature with the sas_token parameter of TableService.
@@ -262,14 +263,14 @@ class TableService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use :func:`~set_table_acl`.
@@ -281,7 +282,7 @@ class TableService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str start_pk:
             The minimum partition key accessible with this shared access 
             signature. startpk must accompany startrk. Key values are inclusive. 
@@ -311,9 +312,9 @@ class TableService(StorageClient):
         sas = SharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_table(
             table_name,
-            permission=permission, 
+            permission=permission,
             expiry=expiry,
-            start=start, 
+            start=start,
             id=id,
             ip=ip,
             protocol=protocol,
@@ -345,7 +346,7 @@ class TableService(StorageClient):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: The table service stats.
-        :rtype: :class:`~azure.storage.models.ServiceStats`
+        :rtype: :class:`~azure.storage.common.models.ServiceStats`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -367,7 +368,7 @@ class TableService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The table service properties.
-        :rtype: :class:`~azure.storage.models.ServiceProperties`
+        :rtype: :class:`~azure.storage.common.models.ServiceProperties`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -381,8 +382,8 @@ class TableService(StorageClient):
 
         return self._perform_request(request, _convert_xml_to_service_properties)
 
-    def set_table_service_properties(self, logging=None, hour_metrics=None, 
-                                    minute_metrics=None, cors=None, timeout=None):
+    def set_table_service_properties(self, logging=None, hour_metrics=None,
+                                     minute_metrics=None, cors=None, timeout=None):
         '''
         Sets the properties of a storage account's Table service, including
         Azure Storage Analytics. If an element (ex Logging) is left as None, the 
@@ -404,7 +405,7 @@ class TableService(StorageClient):
             and CORS will be disabled for the service. For detailed information 
             about CORS rules and evaluation logic, see 
             https://msdn.microsoft.com/en-us/library/azure/dn535601.aspx.
-        :type cors: list of :class:`~azure.storage.models.CorsRule`
+        :type cors: list(:class:`~azure.storage.common.models.CorsRule`)
         :param int timeout:
             The server timeout, expressed in seconds.
         '''
@@ -446,11 +447,11 @@ class TableService(StorageClient):
             The server timeout, expressed in seconds. This function may make multiple 
             calls to the service in which case the timeout value specified will be 
             applied to each individual call.
-        :return: A generator which produces :class:`~azure.storage.models.table.Table` objects.
-        :rtype: :class:`~azure.storage.models.ListGenerator`:
+        :return: A generator which produces :class:`~azure.storage.common.models.table.Table` objects.
+        :rtype: :class:`~azure.storage.common.models.ListGenerator`:
         '''
         operation_context = _OperationContext(location_lock=True)
-        kwargs = {'max_results': num_results, 'marker': marker, 'timeout': timeout, 
+        kwargs = {'max_results': num_results, 'marker': marker, 'timeout': timeout,
                   '_context': operation_context}
         resp = self._list_tables(**kwargs)
 
@@ -476,7 +477,7 @@ class TableService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: A list of tables, potentially with a next_marker property.
-        :rtype: list of :class:`~azure.storage.models.table.Table`:  
+        :rtype: list(:class:`~azure.storage.common.models.table.Table`)
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -489,7 +490,7 @@ class TableService(StorageClient):
             'timeout': _int_to_str(timeout),
         }
 
-        return self._perform_request(request, _convert_json_response_to_tables, 
+        return self._perform_request(request, _convert_json_response_to_tables,
                                      operation_context=_context)
 
     def create_table(self, table_name, fail_on_exist=False, timeout=None):
@@ -611,7 +612,7 @@ class TableService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: A dictionary of access policies associated with the table.
-        :rtype: dict of str to :class:`~azure.storage.models.AccessPolicy`:
+        :rtype: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
         '''
         _validate_not_none('table_name', table_name)
         request = HTTPRequest()
@@ -647,7 +648,7 @@ class TableService(StorageClient):
             A dictionary of access policies to associate with the table. The 
             dictionary may contain up to 5 elements. An empty dictionary 
             will clear the access policies set on the service. 
-        :type signed_identifiers: dict of str to :class:`~azure.storage.models.AccessPolicy`
+        :type signed_identifiers: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
         :param int timeout:
             The server timeout, expressed in seconds.
         '''
@@ -672,10 +673,10 @@ class TableService(StorageClient):
         '''
         Returns a generator to list the entities in the table specified. The 
         generator will lazily follow the continuation tokens returned by the 
-        service and stop when all entities have been returned or max_results is 
+        service and stop when all entities have been returned or num_results is
         reached.
 
-        If max_results is specified and the account has more than that number of 
+        If num_results is specified and the account has more than that number of
         entities, the generator will have a populated next_marker field once it 
         finishes. This marker can be used to create a new generator if more 
         results are desired.
@@ -707,13 +708,13 @@ class TableService(StorageClient):
             property value, and the property EdmType if returned by the service, 
             returns the EdmType of the property. Generally used if accept is set 
             to JSON_NO_METADATA.
-        :type property_resolver: callback function in format of func(pk, rk, prop_name, prop_value, service_edm_type)
+        :type property_resolver: func(pk, rk, prop_name, prop_value, service_edm_type)
         :param int timeout:
             The server timeout, expressed in seconds. This function may make multiple 
             calls to the service in which case the timeout value specified will be 
             applied to each individual call.
         :return: A generator which produces :class:`~azure.storage.table.models.Entity` objects.
-        :rtype: :class:`~azure.storage.models.ListGenerator`
+        :rtype: :class:`~azure.storage.common.models.ListGenerator`
         '''
 
         operation_context = _OperationContext(location_lock=True)
@@ -723,16 +724,16 @@ class TableService(StorageClient):
                 select += ',_ClientEncryptionMetadata1,_ClientEncryptionMetadata2'
 
         args = (table_name,)
-        kwargs = {'filter': filter, 'select': select, 'max_results': num_results, 'marker': marker, 
-                  'accept': accept, 'property_resolver': property_resolver, 'timeout': timeout, 
+        kwargs = {'filter': filter, 'select': select, 'max_results': num_results, 'marker': marker,
+                  'accept': accept, 'property_resolver': property_resolver, 'timeout': timeout,
                   '_context': operation_context}
         resp = self._query_entities(*args, **kwargs)
 
         return ListGenerator(resp, self._query_entities, args, kwargs)
 
     def _query_entities(self, table_name, filter=None, select=None, max_results=None,
-                       marker=None, accept=TablePayloadFormat.JSON_MINIMAL_METADATA,
-                       property_resolver=None, timeout=None, _context=None):
+                        marker=None, accept=TablePayloadFormat.JSON_MINIMAL_METADATA,
+                        property_resolver=None, timeout=None, _context=None):
         '''
         Returns a list of entities under the specified table. Makes a single list 
         request to the service. Used internally by the query_entities method.
@@ -746,16 +747,15 @@ class TableService(StorageClient):
             for more information on constructing filters.
         :param str select:
             Returns only the desired properties of an entity from the set.
-        :param int top:
+        :param int max_results:
             The maximum number of entities to return.
-        :param marker:
+        :param obj marker:
             A dictionary which identifies the portion of the query to be
             returned with the next query operation. The operation returns a
             next_marker element within the response body if the list returned
             was not complete. This value may then be used as a query parameter
             in a subsequent call to request the next portion of the list of
             table. The marker value is opaque to the client.
-        :type marker: obj
         :param str accept:
             Specifies the accepted content type of the response payload. See 
             :class:`~azure.storage.table.models.TablePayloadFormat` for possible 
@@ -765,11 +765,11 @@ class TableService(StorageClient):
             property value, and the property EdmType if returned by the service, 
             returns the EdmType of the property. Generally used if accept is set 
             to JSON_NO_METADATA.
-        :type property_resolver: callback function in format of func(pk, rk, prop_name, prop_value, service_edm_type)
+        :type property_resolver: func(pk, rk, prop_name, prop_value, service_edm_type)
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: A list of entities, potentially with a next_marker property.
-        :rtype: list of :class:`~azure.storage.table.models.Entity`
+        :rtype: list(:class:`~azure.storage.table.models.Entity`)
         '''
         _validate_not_none('table_name', table_name)
         _validate_not_none('accept', accept)
@@ -790,10 +790,10 @@ class TableService(StorageClient):
             'timeout': _int_to_str(timeout),
         }
 
-        return self._perform_request(request, _convert_json_response_to_entities, 
+        return self._perform_request(request, _convert_json_response_to_entities,
                                      [property_resolver, self.require_encryption,
-                                      self.key_encryption_key, self.key_resolver_function], 
-                                      operation_context=_context)
+                                      self.key_encryption_key, self.key_resolver_function],
+                                     operation_context=_context)
 
     def commit_batch(self, table_name, batch, timeout=None):
         '''
@@ -805,8 +805,10 @@ class TableService(StorageClient):
             The batch to commit.
         :param int timeout:
             The server timeout, expressed in seconds.
-        :return: A list of the batch responses corresponding to the requests in the batch.
-        :rtype: list of response objects
+        :return:
+            A list of the batch responses corresponding to the requests in the batch.
+            The items could either be an etag, in case of success, or an error object in case of failure.
+        :rtype: list(:class:`~azure.storage.table.models.AzureBatchOperationError`, str)
         '''
         _validate_not_none('table_name', table_name)
 
@@ -871,7 +873,7 @@ class TableService(StorageClient):
             property value, and the property EdmType if returned by the service, 
             returns the EdmType of the property. Generally used if accept is set 
             to JSON_NO_METADATA.
-        :type property_resolver: callback function in format of func(pk, rk, prop_name, prop_value, service_edm_type)
+        :type property_resolver: func(pk, rk, prop_name, prop_value, service_edm_type)
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The retrieved entity.
@@ -906,7 +908,7 @@ class TableService(StorageClient):
         :param entity:
             The entity to insert. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`~azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The etag of the inserted entity.
@@ -933,7 +935,7 @@ class TableService(StorageClient):
         :param entity:
             The entity to update. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`~azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param str if_match:
             The client may specify the ETag for the entity on the 
             request in order to compare to the ETag maintained by the service 
@@ -949,7 +951,7 @@ class TableService(StorageClient):
         '''
         _validate_not_none('table_name', table_name)
         request = _update_entity(entity, if_match, self.require_encryption, self.key_encryption_key,
-                                 self.encryption_resolver_function)        
+                                 self.encryption_resolver_function)
         request.host_locations = self._get_host_locations()
         request.path = _get_entity_path(table_name, entity['PartitionKey'], entity['RowKey'])
         request.query['timeout'] = _int_to_str(timeout)
@@ -972,7 +974,7 @@ class TableService(StorageClient):
         :param entity:
             The entity to merge. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`~azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param str if_match:
             The client may specify the ETag for the entity on the 
             request in order to compare to the ETag maintained by the service 
@@ -1046,7 +1048,7 @@ class TableService(StorageClient):
         :param entity:
             The entity to insert or replace. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`~azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The etag of the entity.
@@ -1054,7 +1056,7 @@ class TableService(StorageClient):
         '''
         _validate_not_none('table_name', table_name)
         request = _insert_or_replace_entity(entity, self.require_encryption, self.key_encryption_key,
-                                 self.encryption_resolver_function)
+                                            self.encryption_resolver_function)
         request.host_locations = self._get_host_locations()
         request.query['timeout'] = _int_to_str(timeout)
         request.path = _get_entity_path(table_name, entity['PartitionKey'], entity['RowKey'])
@@ -1075,7 +1077,7 @@ class TableService(StorageClient):
         :param entity:
             The entity to insert or merge. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`~azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The etag of the entity.

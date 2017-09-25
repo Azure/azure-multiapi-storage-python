@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from dateutil import parser
+
 try:
     from xml.etree import cElementTree as ETree
 except ImportError:
@@ -26,26 +27,35 @@ from .models import (
     ShareProperties,
     DirectoryProperties,
 )
-from ..models import (
+from ..common.models import (
     _list,
 )
-from .._deserialization import (
+from ..common._deserialization import (
     _parse_properties,
     _parse_metadata,
 )
-from .._error import _validate_content_match
-from .._common_conversion import (
+from ..common._error import _validate_content_match
+from ..common._common_conversion import (
     _get_content_md5,
     _to_str,
 )
 
-def _parse_share(response, name):
+def _parse_snapshot_share(response, name):
+    '''
+    Extracts snapshot return header.
+    '''
+    snapshot = response.headers.get('x-ms-snapshot')
+
+    return _parse_share(response, name, snapshot)
+
+def _parse_share(response, name, snapshot=None):
     if response is None:
         return None
 
     metadata = _parse_metadata(response)
     props = _parse_properties(response, ShareProperties)
-    return Share(name, props, metadata)
+    return Share(name, props, metadata, snapshot)
+
 
 def _parse_directory(response, name):
     if response is None:
@@ -54,6 +64,7 @@ def _parse_directory(response, name):
     metadata = _parse_metadata(response)
     props = _parse_properties(response, DirectoryProperties)
     return Directory(name, props, metadata)
+
 
 def _parse_file(response, name, validate_content=False):
     if response is None:
@@ -76,6 +87,7 @@ def _parse_file(response, name, validate_content=False):
 
     return File(name, response.body, props, metadata)
 
+
 def _convert_xml_to_shares(response):
     '''
     <?xml version="1.0" encoding="utf-8"?>
@@ -86,6 +98,7 @@ def _convert_xml_to_shares(response):
       <Shares>
         <Share>
           <Name>share-name</Name>
+          <Snapshot>date-time-value</Snapshot>
           <Properties>
             <Last-Modified>date/time-value</Last-Modified>
             <Etag>etag</Etag>
@@ -104,7 +117,7 @@ def _convert_xml_to_shares(response):
 
     shares = _list()
     list_element = ETree.fromstring(response.body)
-    
+
     # Set next marker
     next_marker = list_element.findtext('NextMarker') or None
     setattr(shares, 'next_marker', next_marker)
@@ -115,6 +128,9 @@ def _convert_xml_to_shares(response):
         # Name element
         share = Share()
         share.name = share_element.findtext('Name')
+
+        # Snapshot
+        share.snapshot = share_element.findtext('Snapshot')
 
         # Metadata
         metadata_root_element = share_element.find('Metadata')
@@ -128,11 +144,12 @@ def _convert_xml_to_shares(response):
         share.properties.last_modified = parser.parse(properties_element.findtext('Last-Modified'))
         share.properties.etag = properties_element.findtext('Etag')
         share.properties.quota = int(properties_element.findtext('Quota'))
-        
+
         # Add share to list
         shares.append(share)
 
     return shares
+
 
 def _convert_xml_to_directories_and_files(response):
     '''
@@ -159,7 +176,7 @@ def _convert_xml_to_directories_and_files(response):
 
     entries = _list()
     list_element = ETree.fromstring(response.body)
-    
+
     # Set next marker
     next_marker = list_element.findtext('NextMarker') or None
     setattr(entries, 'next_marker', next_marker)
@@ -174,7 +191,7 @@ def _convert_xml_to_directories_and_files(response):
         # Properties
         properties_element = file_element.find('Properties')
         file.properties.content_length = int(properties_element.findtext('Content-Length'))
-        
+
         # Add file to list
         entries.append(file)
 
@@ -182,11 +199,12 @@ def _convert_xml_to_directories_and_files(response):
         # Name element
         directory = Directory()
         directory.name = directory_element.findtext('Name')
-        
+
         # Add directory to list
         entries.append(directory)
 
     return entries
+
 
 def _convert_xml_to_ranges(response):
     '''
@@ -211,11 +229,12 @@ def _convert_xml_to_ranges(response):
     for range_element in ranges_element.findall('Range'):
         # Parse range
         range = FileRange(int(range_element.findtext('Start')), int(range_element.findtext('End')))
-        
+
         # Add range to list
         ranges.append(range)
 
     return ranges
+
 
 def _convert_xml_to_share_stats(response):
     '''

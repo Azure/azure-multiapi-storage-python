@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from datetime import date
 
 from ._common_conversion import (
     _sign_string,
     _to_str,
 )
+from ._constants import X_MS_VERSION
 from ._serialization import (
     url_quote,
     _to_utc_datetime,
 )
-from ._constants import X_MS_VERSION
+
 
 class SharedAccessSignature(object):
     '''
@@ -42,11 +43,11 @@ class SharedAccessSignature(object):
         self.account_name = account_name
         self.account_key = account_key
 
-    def generate_table(self, table_name, permission=None, 
-                        expiry=None, start=None, id=None,
-                        ip=None, protocol=None,
-                        start_pk=None, start_rk=None, 
-                        end_pk=None, end_rk=None):
+    def generate_table(self, table_name, permission=None,
+                       expiry=None, start=None, id=None,
+                       ip=None, protocol=None,
+                       start_pk=None, start_rk=None,
+                       end_pk=None, end_rk=None):
         '''
         Generates a shared access signature for the table.
         Use the returned signature with the sas_token parameter of TableService.
@@ -66,14 +67,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -86,7 +87,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str start_pk:
             The minimum partition key accessible with this shared access 
             signature. startpk must accompany startrk. Key values are inclusive. 
@@ -118,9 +119,9 @@ class SharedAccessSignature(object):
 
         return sas.get_token()
 
-    def generate_queue(self, queue_name, permission=None, 
-                        expiry=None, start=None, id=None,
-                        ip=None, protocol=None):
+    def generate_queue(self, queue_name, permission=None,
+                       expiry=None, start=None, id=None,
+                       ip=None, protocol=None):
         '''
         Generates a shared access signature for the queue.
         Use the returned signature with the sas_token parameter of QueueService.
@@ -141,14 +142,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -161,7 +162,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         '''
         sas = _SharedAccessHelper()
         sas.add_base(permission, expiry, start, ip, protocol)
@@ -170,11 +171,11 @@ class SharedAccessSignature(object):
 
         return sas.get_token()
 
-    def generate_blob(self, container_name, blob_name, permission=None, 
-                        expiry=None, start=None, id=None, ip=None, protocol=None,
-                        cache_control=None, content_disposition=None,
-                        content_encoding=None, content_language=None,
-                        content_type=None):
+    def generate_blob(self, container_name, blob_name, permission=None,
+                      expiry=None, start=None, id=None, ip=None, protocol=None,
+                      cache_control=None, content_disposition=None,
+                      content_encoding=None, content_language=None,
+                      content_type=None):
         '''
         Generates a shared access signature for the blob.
         Use the returned signature with the sas_token parameter of any BlobService.
@@ -197,14 +198,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -217,7 +218,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -240,18 +241,18 @@ class SharedAccessSignature(object):
         sas.add_base(permission, expiry, start, ip, protocol)
         sas.add_id(id)
         sas.add_resource('b')
-        sas.add_override_response_headers(cache_control, content_disposition, 
-                                          content_encoding, content_language, 
+        sas.add_override_response_headers(cache_control, content_disposition,
+                                          content_encoding, content_language,
                                           content_type)
         sas.add_resource_signature(self.account_name, self.account_key, 'blob', resource_path)
 
         return sas.get_token()
 
-    def generate_container(self, container_name, permission=None, expiry=None, 
-                        start=None, id=None, ip=None, protocol=None,
-                        cache_control=None, content_disposition=None,
-                        content_encoding=None, content_language=None,
-                        content_type=None):
+    def generate_container(self, container_name, permission=None, expiry=None,
+                           start=None, id=None, ip=None, protocol=None,
+                           cache_control=None, content_disposition=None,
+                           content_encoding=None, content_language=None,
+                           content_type=None):
         '''
         Generates a shared access signature for the container.
         Use the returned signature with the sas_token parameter of any BlobService.
@@ -272,14 +273,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -292,7 +293,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -313,17 +314,17 @@ class SharedAccessSignature(object):
         sas.add_base(permission, expiry, start, ip, protocol)
         sas.add_id(id)
         sas.add_resource('c')
-        sas.add_override_response_headers(cache_control, content_disposition, 
-                                          content_encoding, content_language, 
+        sas.add_override_response_headers(cache_control, content_disposition,
+                                          content_encoding, content_language,
                                           content_type)
         sas.add_resource_signature(self.account_name, self.account_key, 'blob', container_name)
 
         return sas.get_token()
 
-    def generate_file(self, share_name, directory_name=None, file_name=None, 
+    def generate_file(self, share_name, directory_name=None, file_name=None,
                       permission=None, expiry=None, start=None, id=None,
                       ip=None, protocol=None, cache_control=None,
-                      content_disposition=None, content_encoding=None, 
+                      content_disposition=None, content_encoding=None,
                       content_language=None, content_type=None):
         '''
         Generates a shared access signature for the file.
@@ -350,14 +351,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -370,7 +371,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -396,17 +397,17 @@ class SharedAccessSignature(object):
         sas.add_base(permission, expiry, start, ip, protocol)
         sas.add_id(id)
         sas.add_resource('f')
-        sas.add_override_response_headers(cache_control, content_disposition, 
-                                          content_encoding, content_language, 
+        sas.add_override_response_headers(cache_control, content_disposition,
+                                          content_encoding, content_language,
                                           content_type)
         sas.add_resource_signature(self.account_name, self.account_key, 'file', resource_path)
 
         return sas.get_token()
 
-    def generate_share(self, share_name, permission=None, expiry=None, 
-                       start=None, id=None, ip=None, protocol=None, 
-                       cache_control=None, content_disposition=None, 
-                       content_encoding=None, content_language=None, 
+    def generate_share(self, share_name, permission=None, expiry=None,
+                       start=None, id=None, ip=None, protocol=None,
+                       cache_control=None, content_disposition=None,
+                       content_encoding=None, content_language=None,
                        content_type=None):
         '''
         Generates a shared access signature for the share.
@@ -428,14 +429,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -448,7 +449,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -469,14 +470,14 @@ class SharedAccessSignature(object):
         sas.add_base(permission, expiry, start, ip, protocol)
         sas.add_id(id)
         sas.add_resource('s')
-        sas.add_override_response_headers(cache_control, content_disposition, 
-                                          content_encoding, content_language, 
+        sas.add_override_response_headers(cache_control, content_disposition,
+                                          content_encoding, content_language,
                                           content_type)
         sas.add_resource_signature(self.account_name, self.account_key, 'file', share_name)
 
         return sas.get_token()
 
-    def generate_account(self, services, resource_types, permission, expiry, start=None, 
+    def generate_account(self, services, resource_types, permission, expiry, start=None,
                          ip=None, protocol=None):
         '''
         Generates a shared access signature for the account.
@@ -504,14 +505,14 @@ class SharedAccessSignature(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
             If the IP address from which the request originates does not match the IP address
@@ -520,7 +521,7 @@ class SharedAccessSignature(object):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         '''
         sas = _SharedAccessHelper()
         sas.add_base(permission, expiry, start, ip, protocol)
@@ -528,6 +529,7 @@ class SharedAccessSignature(object):
         sas.add_account_signature(self.account_name, self.account_key)
 
         return sas.get_token()
+
 
 class _QueryStringConstants(object):
     SIGNED_SIGNATURE = 'sig'
@@ -552,8 +554,8 @@ class _QueryStringConstants(object):
     SIGNED_RESOURCE_TYPES = 'srt'
     SIGNED_SERVICES = 'ss'
 
-class _SharedAccessHelper():
 
+class _SharedAccessHelper(object):
     def __init__(self):
         self.query_dict = {}
 
@@ -585,8 +587,8 @@ class _SharedAccessHelper():
         self._add_query(_QueryStringConstants.SIGNED_SERVICES, services)
         self._add_query(_QueryStringConstants.SIGNED_RESOURCE_TYPES, resource_types)
 
-    def add_table_access_ranges(self, table_name, start_pk, start_rk, 
-                                    end_pk, end_rk):
+    def add_table_access_ranges(self, table_name, start_pk, start_rk,
+                                end_pk, end_rk):
         self._add_query(_QueryStringConstants.TABLE_NAME, table_name)
         self._add_query(_QueryStringConstants.START_PK, start_pk)
         self._add_query(_QueryStringConstants.START_RK, start_rk)
@@ -594,10 +596,10 @@ class _SharedAccessHelper():
         self._add_query(_QueryStringConstants.END_RK, end_rk)
 
     def add_override_response_headers(self, cache_control,
-                                        content_disposition,
-                                        content_encoding,
-                                        content_language,
-                                        content_type):
+                                      content_disposition,
+                                      content_encoding,
+                                      content_language,
+                                      content_type):
         self._add_query(_QueryStringConstants.SIGNED_CACHE_CONTROL, cache_control)
         self._add_query(_QueryStringConstants.SIGNED_CONTENT_DISPOSITION, content_disposition)
         self._add_query(_QueryStringConstants.SIGNED_CONTENT_ENCODING, content_encoding)
@@ -618,34 +620,34 @@ class _SharedAccessHelper():
         # resource. The order of values is important.
         string_to_sign = \
             (get_value_to_append(_QueryStringConstants.SIGNED_PERMISSION) +
-                get_value_to_append(_QueryStringConstants.SIGNED_START) +
-                get_value_to_append(_QueryStringConstants.SIGNED_EXPIRY) +
-                canonicalized_resource +
-                get_value_to_append(_QueryStringConstants.SIGNED_IDENTIFIER) +
-                get_value_to_append(_QueryStringConstants.SIGNED_IP) +
-                get_value_to_append(_QueryStringConstants.SIGNED_PROTOCOL) +
-                get_value_to_append(_QueryStringConstants.SIGNED_VERSION))
+             get_value_to_append(_QueryStringConstants.SIGNED_START) +
+             get_value_to_append(_QueryStringConstants.SIGNED_EXPIRY) +
+             canonicalized_resource +
+             get_value_to_append(_QueryStringConstants.SIGNED_IDENTIFIER) +
+             get_value_to_append(_QueryStringConstants.SIGNED_IP) +
+             get_value_to_append(_QueryStringConstants.SIGNED_PROTOCOL) +
+             get_value_to_append(_QueryStringConstants.SIGNED_VERSION))
 
         if service == 'blob' or service == 'file':
             string_to_sign += \
                 (get_value_to_append(_QueryStringConstants.SIGNED_CACHE_CONTROL) +
-                get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_DISPOSITION) +
-                get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_ENCODING) +
-                get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_LANGUAGE) +
-                get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_TYPE))
+                 get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_DISPOSITION) +
+                 get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_ENCODING) +
+                 get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_LANGUAGE) +
+                 get_value_to_append(_QueryStringConstants.SIGNED_CONTENT_TYPE))
 
         if service == 'table':
             string_to_sign += \
                 (get_value_to_append(_QueryStringConstants.START_PK) +
-                get_value_to_append(_QueryStringConstants.START_RK) +
-                get_value_to_append(_QueryStringConstants.END_PK) +
-                get_value_to_append(_QueryStringConstants.END_RK))
+                 get_value_to_append(_QueryStringConstants.START_RK) +
+                 get_value_to_append(_QueryStringConstants.END_PK) +
+                 get_value_to_append(_QueryStringConstants.END_RK))
 
         # remove the trailing newline
         if string_to_sign[-1] == '\n':
             string_to_sign = string_to_sign[:-1]
 
-        self._add_query(_QueryStringConstants.SIGNED_SIGNATURE, 
+        self._add_query(_QueryStringConstants.SIGNED_SIGNATURE,
                         _sign_string(account_key, string_to_sign))
 
     def add_account_signature(self, account_name, account_key):
@@ -655,16 +657,16 @@ class _SharedAccessHelper():
 
         string_to_sign = \
             (account_name + '\n' +
-                get_value_to_append(_QueryStringConstants.SIGNED_PERMISSION) +
-                get_value_to_append(_QueryStringConstants.SIGNED_SERVICES) +
-                get_value_to_append(_QueryStringConstants.SIGNED_RESOURCE_TYPES) +
-                get_value_to_append(_QueryStringConstants.SIGNED_START) +
-                get_value_to_append(_QueryStringConstants.SIGNED_EXPIRY) +
-                get_value_to_append(_QueryStringConstants.SIGNED_IP) +
-                get_value_to_append(_QueryStringConstants.SIGNED_PROTOCOL) +
-                get_value_to_append(_QueryStringConstants.SIGNED_VERSION))
+             get_value_to_append(_QueryStringConstants.SIGNED_PERMISSION) +
+             get_value_to_append(_QueryStringConstants.SIGNED_SERVICES) +
+             get_value_to_append(_QueryStringConstants.SIGNED_RESOURCE_TYPES) +
+             get_value_to_append(_QueryStringConstants.SIGNED_START) +
+             get_value_to_append(_QueryStringConstants.SIGNED_EXPIRY) +
+             get_value_to_append(_QueryStringConstants.SIGNED_IP) +
+             get_value_to_append(_QueryStringConstants.SIGNED_PROTOCOL) +
+             get_value_to_append(_QueryStringConstants.SIGNED_VERSION))
 
-        self._add_query(_QueryStringConstants.SIGNED_SIGNATURE, 
+        self._add_query(_QueryStringConstants.SIGNED_SIGNATURE,
                         _sign_string(account_key, string_to_sign))
 
     def get_token(self):

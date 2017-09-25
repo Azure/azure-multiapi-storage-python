@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from ._common_conversion import (
     _sign_string,
 )
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class _StorageSharedKeyAuthentication(object):
@@ -70,6 +73,7 @@ class _StorageSharedKeyAuthentication(_StorageSharedKeyAuthentication):
             self._get_canonicalized_resource_query(request)
 
         self._add_authorization_header(request, string_to_sign)
+        logger.debug("String_to_sign=%s", string_to_sign)
 
     def _get_canonicalized_resource_query(self, request):
         sorted_queries = [(name, value) for name, value in request.query.items()]
@@ -95,6 +99,7 @@ class _StorageTableSharedKeyAuthentication(_StorageSharedKeyAuthentication):
             self._get_canonicalized_resource_query(request)
 
         self._add_authorization_header(request, string_to_sign)
+        logger.debug("String_to_sign=%s", string_to_sign)
 
     def _get_canonicalized_resource_query(self, request):
         for name, value in request.query.items():

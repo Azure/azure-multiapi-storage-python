@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-import os
+# --------------------------------------------------------------------------
 import sys
+
 if sys.version_info >= (3,):
     from urllib.parse import urlparse
 else:
@@ -33,23 +33,30 @@ from ._error import (
 )
 
 _EMULATOR_ENDPOINTS = {
-   'blob': DEV_BLOB_HOST,
-   'queue': DEV_QUEUE_HOST,
-   'table': DEV_TABLE_HOST,
-   'file': '',
+    'blob': DEV_BLOB_HOST,
+    'queue': DEV_QUEUE_HOST,
+    'table': DEV_TABLE_HOST,
+    'file': '',
 }
 
-_CONNECTION_ENDPONTS = {
+_CONNECTION_ENDPOINTS = {
     'blob': 'BlobEndpoint',
     'queue': 'QueueEndpoint',
     'table': 'TableEndpoint',
     'file': 'FileEndpoint',
 }
 
+_CONNECTION_ENDPOINTS_SECONDARY = {
+    'blob': 'BlobSecondaryEndpoint',
+    'queue': 'QueueSecondaryEndpoint',
+    'table': 'TableSecondaryEndpoint',
+    'file': 'FileSecondaryEndpoint',
+}
+
 class _ServiceParameters(object):
-    def __init__(self, service, account_name=None, account_key=None, sas_token=None,
-                 is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
-                 custom_domain=None):
+    def __init__(self, service, account_name=None, account_key=None, sas_token=None, 
+                 is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE, 
+                 custom_domain=None, custom_domain_secondary=None):
 
         self.account_name = account_name
         self.account_key = account_key
@@ -88,28 +95,39 @@ class _ServiceParameters(object):
                 self.primary_endpoint = '{}.{}.{}'.format(self.account_name, service, endpoint_suffix)
 
             # Setup the secondary endpoint
-            if self.account_name:
-                self.secondary_endpoint = '{}-secondary.{}.{}'.format(self.account_name, service, endpoint_suffix)
+            if custom_domain_secondary:
+                if not custom_domain:
+                    raise ValueError(_ERROR_STORAGE_MISSING_INFO)   
+
+                parsed_url = urlparse(custom_domain_secondary)
+
+                # Trim any trailing slashes from the path
+                path = parsed_url.path.rstrip('/')
+
+                self.secondary_endpoint = parsed_url.netloc + path
             else:
-                self.secondary_endpoint = None
+                if self.account_name:
+                    self.secondary_endpoint = '{}-secondary.{}.{}'.format(self.account_name, service, endpoint_suffix)
+                else:
+                    self.secondary_endpoint = None
 
     @staticmethod
     def get_service_parameters(service, account_name=None, account_key=None, sas_token=None, is_emulated=None,
-                 protocol=None, endpoint_suffix=None, custom_domain=None, request_session=None,
-                 connection_string=None, socket_timeout=None):
+                               protocol=None, endpoint_suffix=None, custom_domain=None, request_session=None,
+                               connection_string=None, socket_timeout=None):
         if connection_string:
             params = _ServiceParameters._from_connection_string(connection_string, service)
         elif is_emulated:
             params = _ServiceParameters(service, is_emulated=True)
         elif account_name:
             params = _ServiceParameters(service,
-                                      account_name=account_name,
-                                      account_key=account_key,
-                                      sas_token=sas_token,
-                                      is_emulated=is_emulated,
-                                      protocol=protocol,
-                                      endpoint_suffix=endpoint_suffix,
-                                      custom_domain=custom_domain)
+                                        account_name=account_name,
+                                        account_key=account_key,
+                                        sas_token=sas_token,
+                                        is_emulated=is_emulated,
+                                        protocol=protocol,
+                                        endpoint_suffix=endpoint_suffix,
+                                        custom_domain=custom_domain)
         else:
             raise ValueError(_ERROR_STORAGE_MISSING_INFO)
 
@@ -135,7 +153,8 @@ class _ServiceParameters(object):
         endpoint_suffix = config.get('EndpointSuffix')
 
         # Custom URLs
-        endpoint = config.get(_CONNECTION_ENDPONTS[service])
+        endpoint = config.get(_CONNECTION_ENDPOINTS[service])
+        endpoint_secondary = config.get(_CONNECTION_ENDPOINTS_SECONDARY[service])
 
         return _ServiceParameters(service,
                                   account_name=account_name,
@@ -144,4 +163,5 @@ class _ServiceParameters(object):
                                   is_emulated=is_emulated,
                                   protocol=protocol,
                                   endpoint_suffix=endpoint_suffix,
-                                  custom_domain=endpoint)
+                                  custom_domain=endpoint,
+                                  custom_domain_secondary=endpoint_secondary)

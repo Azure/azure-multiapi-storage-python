@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,46 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+import os
+from json import (
+    dumps,
+    loads,
+)
 
 from azure.common import (
     AzureException,
 )
-from .._constants import (
-    _ENCRYPTION_PROTOCOL_V1,
+from cryptography.hazmat.primitives.padding import PKCS7
+
+from ..common._common_conversion import (
+    _encode_base64,
+    _decode_base64_to_bytes
 )
-from .._encryption import (
+from ..common._encryption import (
     _generate_encryption_data_dict,
     _dict_to_encryption_data,
     _generate_AES_CBC_cipher,
     _validate_and_unwrap_cek,
     _EncryptionAlgorithm,
 )
-from json import (
-    dumps,
-    loads,
-)
-from base64 import(
-    b64encode,
-    b64decode,
-)
-from .._error import(
-    _ERROR_UNSUPPORTED_ENCRYPTION_VERSION,
+from ..common._error import (
     _ERROR_DECRYPTION_FAILURE,
-    _ERROR_DATA_NOT_ENCRYPTED,
     _ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM,
     _validate_not_none,
     _validate_key_encryption_key_wrap,
-    _validate_key_encryption_key_unwrap,
-    _validate_encryption_protocol_version,
-    _validate_kek_id,
 )
-from .._common_conversion import (
-    _encode_base64,
-    _decode_base64_to_bytes
+from ._error import (
+    _ERROR_MESSAGE_NOT_ENCRYPTED
 )
-from cryptography.hazmat.primitives.padding import PKCS7
-import os
+
 
 def _encrypt_queue_message(message, key_encryption_key):
     '''
@@ -92,13 +86,13 @@ def _encrypt_queue_message(message, key_encryption_key):
     encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
 
     # Build the dictionary structure.
-    queue_message = {}
-    queue_message['EncryptedMessageContents'] = _encode_base64(encrypted_data)
-    queue_message['EncryptionData'] = _generate_encryption_data_dict(key_encryption_key,
-                                                                     content_encryption_key,
-                                                                     initialization_vector)
+    queue_message = {'EncryptedMessageContents': _encode_base64(encrypted_data),
+                     'EncryptionData': _generate_encryption_data_dict(key_encryption_key,
+                                                                      content_encryption_key,
+                                                                      initialization_vector)}
 
     return dumps(queue_message)
+
 
 def _decrypt_queue_message(message, require_encryption, key_encryption_key, resolver):
     '''
@@ -123,7 +117,7 @@ def _decrypt_queue_message(message, require_encryption, key_encryption_key, reso
 
         encryption_data = _dict_to_encryption_data(message['EncryptionData'])
         decoded_data = _decode_base64_to_bytes(message['EncryptedMessageContents'])
-    except (KeyError, ValueError) as e:
+    except (KeyError, ValueError):
         # Message was not json formatted and so was not encrypted
         # or the user provided a json formatted message.
         if require_encryption:
@@ -132,8 +126,9 @@ def _decrypt_queue_message(message, require_encryption, key_encryption_key, reso
             return message
     try:
         return _decrypt(decoded_data, encryption_data, key_encryption_key, resolver).decode('utf-8')
-    except Exception as e:
+    except Exception:
         raise AzureException(_ERROR_DECRYPTION_FAILURE)
+
 
 def _decrypt(message, encryption_data, key_encryption_key=None, resolver=None):
     '''
@@ -156,17 +151,17 @@ def _decrypt(message, encryption_data, key_encryption_key=None, resolver=None):
     _validate_not_none('message', message)
     content_encryption_key = _validate_and_unwrap_cek(encryption_data, key_encryption_key, resolver)
 
-    if not ( _EncryptionAlgorithm.AES_CBC_256 == encryption_data.encryption_agent.encryption_algorithm):
+    if not (_EncryptionAlgorithm.AES_CBC_256 == encryption_data.encryption_agent.encryption_algorithm):
         raise ValueError(_ERROR_UNSUPPORTED_ENCRYPTION_ALGORITHM)
 
     cipher = _generate_AES_CBC_cipher(content_encryption_key, encryption_data.content_encryption_IV)
 
-    #decrypt data
+    # decrypt data
     decrypted_data = message
     decryptor = cipher.decryptor()
     decrypted_data = (decryptor.update(decrypted_data) + decryptor.finalize())
 
-    #unpad data
+    # unpad data
     unpadder = PKCS7(128).unpadder()
     decrypted_data = (unpadder.update(decrypted_data) + unpadder.finalize())
 

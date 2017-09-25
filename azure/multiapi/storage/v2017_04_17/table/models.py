@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from azure.common import (
     AzureException,
     AzureHttpError,
 )
+
 from ._error import (
     _ERROR_ATTRIBUTE_MISSING,
 )
+
 
 class AzureBatchValidationError(AzureException):
     '''
@@ -28,8 +30,8 @@ class AzureBatchValidationError(AzureException):
         A detailed error message indicating the reason for the failure. 
     '''
 
-class AzureBatchOperationError(AzureHttpError):
 
+class AzureBatchOperationError(AzureHttpError):
     '''
     Indicates that a batch operation failed.
     
@@ -47,6 +49,7 @@ class AzureBatchOperationError(AzureHttpError):
     def __init__(self, message, status_code, batch_code):
         super(AzureBatchOperationError, self).__init__(message, status_code)
         self.code = batch_code
+
 
 class Entity(dict):
     '''
@@ -115,13 +118,13 @@ class TablePayloadFormat(object):
     Specifies the accepted content type of the response payload. More information
     can be found here: https://msdn.microsoft.com/en-us/library/azure/dn535600.aspx
     '''
-   
+
     JSON_NO_METADATA = 'application/json;odata=nometadata'
     '''Returns no type information for the entity properties.'''
-    
+
     JSON_MINIMAL_METADATA = 'application/json;odata=minimalmetadata'
     '''Returns minimal type information for the entity properties.'''
-    
+
     JSON_FULL_METADATA = 'application/json;odata=fullmetadata'
     '''Returns minimal type information for the entity properties plus some extra odata properties.'''
 
@@ -187,18 +190,19 @@ class TablePermissions(object):
         self.add = add or ('a' in _str)
         self.update = update or ('u' in _str)
         self.delete = delete or ('d' in _str)
-    
+
     def __or__(self, other):
         return TablePermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return TablePermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.query else '') +
                 ('a' if self.add else '') +
                 ('u' if self.update else '') +
                 ('d' if self.delete else ''))
+
 
 TablePermissions.QUERY = TablePermissions(query=True)
 TablePermissions.ADD = TablePermissions(add=True)

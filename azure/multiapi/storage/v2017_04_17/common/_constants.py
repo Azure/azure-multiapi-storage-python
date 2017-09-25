@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,17 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import platform
 
 __author__ = 'Microsoft Corp. <ptvshelp@microsoft.com>'
-__version__ = '0.36.0'
+__version__ = '0.37.0'
 
 # x-ms-version for storage service.
 X_MS_VERSION = '2017-04-17'
 
 # UserAgent string sample: 'Azure-Storage/0.32.0 (Python CPython 3.4.2; Windows 8)'
-USER_AGENT_STRING = 'Azure-Storage/{} (Python {} {}; {} {})'.format(__version__, platform.python_implementation(), platform.python_version(), platform.system(), platform.release())
+USER_AGENT_STRING = 'Azure-Storage/{} (Python {} {}; {} {})'.format(__version__, platform.python_implementation(),
+                                                                    platform.python_version(), platform.system(),
+                                                                    platform.release())
 
 # Live ServiceClient URLs
 SERVICE_HOST_BASE = 'core.windows.net'
@@ -39,5 +41,5 @@ DEV_ACCOUNT_KEY = 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6t
 # Socket timeout in seconds
 DEFAULT_SOCKET_TIMEOUT = 20
 
-#Encryption constants
+# Encryption constants
 _ENCRYPTION_PROTOCOL_V1 = '1.0'

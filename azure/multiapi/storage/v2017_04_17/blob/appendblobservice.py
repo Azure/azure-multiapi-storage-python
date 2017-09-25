@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,46 +11,48 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._error import (
-    _validate_not_none,
-    _validate_type_bytes,
-    _validate_encryption_unsupported,
-    _ERROR_VALUE_NEGATIVE,
-)
-from .._common_conversion import (
+# --------------------------------------------------------------------------
+import sys
+from os import path
+
+from ..common._common_conversion import (
     _to_str,
     _int_to_str,
     _datetime_to_utc_string,
     _get_content_md5,
 )
-from .._serialization import (
-    _get_data_bytes_only,
-    _add_metadata_headers,
-)
-from .._http import HTTPRequest
-from ._upload_chunking import (
-    _AppendBlobChunkUploader,
-    _upload_blob_chunks,
-)
-from .models import (
-    _BlobTypes,
-    ResourceProperties
-)
-from .._constants import (
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from ._serialization import (
-    _get_path,
+from ..common._error import (
+    _validate_not_none,
+    _validate_type_bytes,
+    _validate_encryption_unsupported,
+    _ERROR_VALUE_NEGATIVE,
+)
+from ..common._http import HTTPRequest
+from ..common._serialization import (
+    _get_data_bytes_only,
+    _add_metadata_headers,
 )
 from ._deserialization import (
     _parse_append_block,
     _parse_base_properties,
 )
+from ._serialization import (
+    _get_path,
+)
+from ._upload_chunking import (
+    _AppendBlobChunkUploader,
+    _upload_blob_chunks,
+)
 from .baseblobservice import BaseBlobService
-from os import path
-import sys
+from .models import (
+    _BlobTypes,
+    ResourceProperties
+)
+
 if sys.version_info >= (3,):
     from io import BytesIO
 else:
@@ -75,7 +77,7 @@ class AppendBlobService(BaseBlobService):
     '''
     MAX_BLOCK_SIZE = 4 * 1024 * 1024
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, 
+    def __init__(self, account_name=None, account_key=None, sas_token=None,
                  is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
                  custom_domain=None, request_session=None, connection_string=None, socket_timeout=None):
         '''
@@ -119,7 +121,7 @@ class AppendBlobService(BaseBlobService):
         '''
         self.blob_type = _BlobTypes.AppendBlob
         super(AppendBlobService, self).__init__(
-            account_name, account_key, sas_token, is_emulated, protocol, endpoint_suffix, 
+            account_name, account_key, sas_token, is_emulated, protocol, endpoint_suffix,
             custom_domain, request_session, connection_string, socket_timeout)
 
     def create_blob(self, container_name, blob_name, content_settings=None,
@@ -142,7 +144,7 @@ class AppendBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param str lease_id:
             Required if the blob has an active lease.
         :param datetime if_modified_since:
@@ -271,7 +273,7 @@ class AppendBlobService(BaseBlobService):
         request.query = {
             'comp': 'appendblock',
             'timeout': _int_to_str(timeout),
-         }
+        }
         request.headers = {
             'x-ms-blob-condition-maxsize': _to_str(maxsize_condition),
             'x-ms-blob-condition-appendpos': _to_str(appendpos_condition),
@@ -289,11 +291,11 @@ class AppendBlobService(BaseBlobService):
 
         return self._perform_request(request, _parse_append_block)
 
-    #----Convenience APIs----------------------------------------------
+    # ----Convenience APIs----------------------------------------------
 
     def append_blob_from_path(
-        self, container_name, blob_name, file_path, validate_content=False,
-        maxsize_condition=None, progress_callback=None, lease_id=None, timeout=None):
+            self, container_name, blob_name, file_path, validate_content=False,
+            maxsize_condition=None, progress_callback=None, lease_id=None, timeout=None):
         '''
         Appends to the content of an existing blob from a file path, with automatic
         chunking and progress notifications.
@@ -321,7 +323,7 @@ class AppendBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param str lease_id:
             Required if the blob has an active lease.
         :param int timeout:
@@ -339,20 +341,20 @@ class AppendBlobService(BaseBlobService):
         count = path.getsize(file_path)
         with open(file_path, 'rb') as stream:
             return self.append_blob_from_stream(
-                    container_name,
-                    blob_name,
-                    stream,
-                    count=count,
-                    validate_content=validate_content,
-                    maxsize_condition=maxsize_condition,
-                    progress_callback=progress_callback,
-                    lease_id=lease_id,
-                    timeout=timeout)
+                container_name,
+                blob_name,
+                stream,
+                count=count,
+                validate_content=validate_content,
+                maxsize_condition=maxsize_condition,
+                progress_callback=progress_callback,
+                lease_id=lease_id,
+                timeout=timeout)
 
     def append_blob_from_bytes(
-        self, container_name, blob_name, blob, index=0, count=None,
-        validate_content=False, maxsize_condition=None, progress_callback=None,
-        lease_id=None, timeout=None):
+            self, container_name, blob_name, blob, index=0, count=None,
+            validate_content=False, maxsize_condition=None, progress_callback=None,
+            lease_id=None, timeout=None):
         '''
         Appends to the content of an existing blob from an array of bytes, with
         automatic chunking and progress notifications.
@@ -385,7 +387,7 @@ class AppendBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param str lease_id:
             Required if the blob has an active lease.
         :param int timeout:
@@ -412,20 +414,20 @@ class AppendBlobService(BaseBlobService):
         stream.seek(index)
 
         return self.append_blob_from_stream(
-                container_name,
-                blob_name,
-                stream,
-                count=count,
-                validate_content=validate_content,
-                maxsize_condition=maxsize_condition,
-                lease_id=lease_id,
-                progress_callback=progress_callback,
-                timeout=timeout)
+            container_name,
+            blob_name,
+            stream,
+            count=count,
+            validate_content=validate_content,
+            maxsize_condition=maxsize_condition,
+            lease_id=lease_id,
+            progress_callback=progress_callback,
+            timeout=timeout)
 
     def append_blob_from_text(
-        self, container_name, blob_name, text, encoding='utf-8',
-        validate_content=False, maxsize_condition=None, progress_callback=None,
-        lease_id=None, timeout=None):
+            self, container_name, blob_name, text, encoding='utf-8',
+            validate_content=False, maxsize_condition=None, progress_callback=None,
+            lease_id=None, timeout=None):
         '''
         Appends to the content of an existing blob from str/unicode, with
         automatic chunking and progress notifications.
@@ -455,7 +457,7 @@ class AppendBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param str lease_id:
             Required if the blob has an active lease.
         :param int timeout:
@@ -475,21 +477,21 @@ class AppendBlobService(BaseBlobService):
             text = text.encode(encoding)
 
         return self.append_blob_from_bytes(
-                container_name,
-                blob_name,
-                text,
-                index=0,
-                count=len(text),
-                validate_content=validate_content,
-                maxsize_condition=maxsize_condition,
-                lease_id=lease_id,
-                progress_callback=progress_callback,
-                timeout=timeout)
+            container_name,
+            blob_name,
+            text,
+            index=0,
+            count=len(text),
+            validate_content=validate_content,
+            maxsize_condition=maxsize_condition,
+            lease_id=lease_id,
+            progress_callback=progress_callback,
+            timeout=timeout)
 
     def append_blob_from_stream(
-        self, container_name, blob_name, stream, count=None,
-        validate_content=False, maxsize_condition=None, progress_callback=None, 
-        lease_id=None, timeout=None):
+            self, container_name, blob_name, stream, count=None,
+            validate_content=False, maxsize_condition=None, progress_callback=None,
+            lease_id=None, timeout=None):
         '''
         Appends to the content of an existing blob from a file/stream, with
         automatic chunking and progress notifications.
@@ -520,7 +522,7 @@ class AppendBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param str lease_id:
             Required if the blob has an active lease.
         :param int timeout:
@@ -546,7 +548,7 @@ class AppendBlobService(BaseBlobService):
             blob_size=count,
             block_size=self.MAX_BLOCK_SIZE,
             stream=stream,
-            max_connections=1, # upload not easily parallelizable
+            max_connections=1,  # upload not easily parallelizable
             progress_callback=progress_callback,
             validate_content=validate_content,
             lease_id=lease_id,

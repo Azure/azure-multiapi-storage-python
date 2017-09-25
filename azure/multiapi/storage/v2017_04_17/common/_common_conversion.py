@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
 import base64
 import hashlib
 import hmac
 import sys
+from io import (SEEK_SET)
+
 from dateutil.tz import tzutc
-from io import (IOBase, SEEK_SET)
 
 from ._error import (
     _ERROR_VALUE_SHOULD_BE_BYTES_OR_STREAM,
@@ -37,11 +38,14 @@ if sys.version_info < (3,):
 else:
     _str = str
 
+
 def _to_str(value):
     return _str(value) if value is not None else None
 
+
 def _int_to_str(value):
     return str(int(value)) if value is not None else None
+
 
 def _bool_to_str(value):
     if value is None:
@@ -55,8 +59,10 @@ def _bool_to_str(value):
 
     return str(value)
 
+
 def _to_utc_datetime(value):
     return value.strftime('%Y-%m-%dT%H:%M:%SZ')
+
 
 def _datetime_to_utc_string(value):
     # Azure expects the date value passed in to be UTC.
@@ -69,6 +75,7 @@ def _datetime_to_utc_string(value):
         value = value.astimezone(tzutc())
 
     return value.strftime('%a, %d %b %Y %H:%M:%S GMT')
+
 
 def _encode_base64(data):
     if isinstance(data, _unicode_type):
@@ -101,6 +108,7 @@ def _sign_string(key, string_to_sign, key_is_base64=True):
     encoded_digest = _encode_base64(digest)
     return encoded_digest
 
+
 def _get_content_md5(data):
     md5 = hashlib.md5()
     if isinstance(data, bytes):
@@ -121,6 +129,7 @@ def _get_content_md5(data):
         raise ValueError(_ERROR_VALUE_SHOULD_BE_BYTES_OR_STREAM.format('data'))
 
     return base64.b64encode(md5.digest()).decode('utf-8')
+
 
 def _lower(text):
     return text.lower()

@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._http import HTTPRequest
-from .._common_conversion import (
+# --------------------------------------------------------------------------
+from ..common._common_conversion import (
     _to_str,
 )
-from .._error import (
+from ..common._error import (
     _validate_not_none,
     _validate_encryption_required,
     _validate_encryption_unsupported,
 )
-from .._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_request_body,
+)
+from ._encryption import (
+    _encrypt_entity,
 )
 from ._error import (
     _validate_entity,
@@ -33,9 +36,7 @@ from ._serialization import (
     _DEFAULT_CONTENT_TYPE_HEADER,
     _DEFAULT_PREFER_HEADER,
 )
-from ._encryption import (
-    _encrypt_entity,
-)
+
 
 def _get_entity(partition_key, row_key, select, accept):
     '''
@@ -50,6 +51,7 @@ def _get_entity(partition_key, row_key, select, accept):
     request.query = {'$select': _to_str(select)}
 
     return request
+
 
 def _insert_entity(entity, encryption_required=False,
                    key_encryption_key=None, encryption_resolver=None):
@@ -76,11 +78,12 @@ def _insert_entity(entity, encryption_required=False,
         _DEFAULT_ACCEPT_HEADER[0]: _DEFAULT_ACCEPT_HEADER[1],
         _DEFAULT_PREFER_HEADER[0]: _DEFAULT_PREFER_HEADER[1]
     }
-    if(key_encryption_key):
+    if key_encryption_key:
         entity = _encrypt_entity(entity, key_encryption_key, encryption_resolver)
     request.body = _get_request_body(_convert_entity_to_json(entity))
 
     return request
+
 
 def _update_entity(entity, if_match, encryption_required=False,
                    key_encryption_key=None, encryption_resolver=None):
@@ -108,11 +111,12 @@ def _update_entity(entity, if_match, encryption_required=False,
         _DEFAULT_ACCEPT_HEADER[0]: _DEFAULT_ACCEPT_HEADER[1],
         'If-Match': _to_str(if_match),
     }
-    if(key_encryption_key):
+    if key_encryption_key:
         entity = _encrypt_entity(entity, key_encryption_key, encryption_resolver)
     request.body = _get_request_body(_convert_entity_to_json(entity))
 
     return request
+
 
 def _merge_entity(entity, if_match, require_encryption=False, key_encryption_key=None):
     '''
@@ -133,6 +137,7 @@ def _merge_entity(entity, if_match, require_encryption=False, key_encryption_key
 
     return request
 
+
 def _delete_entity(partition_key, row_key, if_match):
     '''
      Constructs a delete entity request.
@@ -149,6 +154,7 @@ def _delete_entity(partition_key, row_key, if_match):
 
     return request
 
+
 def _insert_or_replace_entity(entity, require_encryption=False,
                               key_encryption_key=None, encryption_resolver=None):
     '''
@@ -164,11 +170,12 @@ def _insert_or_replace_entity(entity, require_encryption=False,
         _DEFAULT_ACCEPT_HEADER[0]: _DEFAULT_ACCEPT_HEADER[1],
     }
 
-    if(key_encryption_key):
+    if key_encryption_key:
         entity = _encrypt_entity(entity, key_encryption_key, encryption_resolver)
     request.body = _get_request_body(_convert_entity_to_json(entity))
 
     return request
+
 
 def _insert_or_merge_entity(entity, require_encryption=False, key_encryption_key=None):
     '''
@@ -180,9 +187,6 @@ def _insert_or_merge_entity(entity, require_encryption=False, key_encryption_key
         wrap_key(key)--wraps the specified key using an algorithm of the user's choice.
         get_key_wrap_algorithm()--returns the algorithm used to wrap the specified symmetric key.
         get_kid()--returns a string key id for this key-encryption-key.
-    :param function(partition_key, row_key, property_name) encryption_resolver:
-        A function that takes in an entities partition key, row key, and property name and returns 
-        a boolean that indicates whether that property should be encrypted.
     '''
     _validate_entity(entity)
     _validate_encryption_unsupported(require_encryption, key_encryption_key)

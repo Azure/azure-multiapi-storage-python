@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,22 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
 # Note that we import BlobService/QueueService/TableService on demand
 # because this module is imported by azure/storage/__init__
 # ie. we don't want 'import azure.storage' to trigger an automatic import
 # of blob/queue/table packages.
 
-from .sharedaccesssignature import (
-    SharedAccessSignature,
-)
+from ._error import _validate_not_none
 from .models import (
     ResourceTypes,
     Services,
     AccountPermissions,
 )
-from ._error import _validate_not_none
+from .sharedaccesssignature import (
+    SharedAccessSignature,
+)
+
 
 class CloudStorageAccount(object):
     """
@@ -64,10 +65,14 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.blob.blockblobservice.BlockBlobService`
         '''
-        from .blob.blockblobservice import BlockBlobService
-        return BlockBlobService(self.account_name, self.account_key, 
-                                sas_token=self.sas_token,
-                                is_emulated=self.is_emulated)
+        try:
+            from ..blob.blockblobservice import BlockBlobService
+            return BlockBlobService(self.account_name, self.account_key,
+                                    sas_token=self.sas_token,
+                                    is_emulated=self.is_emulated)
+        except ImportError:
+            raise Exception('The package azure-storage-blob is required. '
+                            + 'Please install it using "pip install azure-storage-blob"')
 
     def create_page_blob_service(self):
         '''
@@ -77,10 +82,14 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.blob.pageblobservice.PageBlobService`
         '''
-        from .blob.pageblobservice import PageBlobService
-        return PageBlobService(self.account_name, self.account_key,
-                               sas_token=self.sas_token,
-                               is_emulated=self.is_emulated)
+        try:
+            from ..blob.pageblobservice import PageBlobService
+            return PageBlobService(self.account_name, self.account_key,
+                                   sas_token=self.sas_token,
+                                   is_emulated=self.is_emulated)
+        except ImportError:
+            raise Exception('The package azure-storage-blob is required. '
+                            + 'Please install it using "pip install azure-storage-blob"')
 
     def create_append_blob_service(self):
         '''
@@ -90,10 +99,14 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.blob.appendblobservice.AppendBlobService`
         '''
-        from .blob.appendblobservice import AppendBlobService
-        return AppendBlobService(self.account_name, self.account_key,
-                                 sas_token=self.sas_token,
-                                 is_emulated=self.is_emulated)
+        try:
+            from ..blob.appendblobservice import AppendBlobService
+            return AppendBlobService(self.account_name, self.account_key,
+                                     sas_token=self.sas_token,
+                                     is_emulated=self.is_emulated)
+        except ImportError:
+            raise Exception('The package azure-storage-blob is required. '
+                            + 'Please install it using "pip install azure-storage-blob"')
 
     def create_table_service(self):
         '''
@@ -103,10 +116,14 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.table.tableservice.TableService`
         '''
-        from .table.tableservice import TableService
-        return TableService(self.account_name, self.account_key,
-                            sas_token=self.sas_token,
-                            is_emulated=self.is_emulated)
+        try:
+            from ..table.tableservice import TableService
+            return TableService(self.account_name, self.account_key,
+                                sas_token=self.sas_token,
+                                is_emulated=self.is_emulated)
+        except ImportError:
+            raise Exception('The package azure-storage-table is required. '
+                            + 'Please install it using "pip install azure-storage-table"')
 
     def create_queue_service(self):
         '''
@@ -116,10 +133,14 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.queue.queueservice.QueueService`
         '''
-        from .queue.queueservice import QueueService
-        return QueueService(self.account_name, self.account_key,
-                            sas_token=self.sas_token,
-                            is_emulated=self.is_emulated)
+        try:
+            from ..queue.queueservice import QueueService
+            return QueueService(self.account_name, self.account_key,
+                                sas_token=self.sas_token,
+                                is_emulated=self.is_emulated)
+        except ImportError:
+            raise Exception('The package azure-storage-queue is required. '
+                            + 'Please install it using "pip install azure-storage-queue"')
 
     def create_file_service(self):
         '''
@@ -129,12 +150,16 @@ class CloudStorageAccount(object):
         :return: A service object.
         :rtype: :class:`~azure.storage.file.fileservice.FileService`
         '''
-        from .file.fileservice import FileService
-        return FileService(self.account_name, self.account_key,
-                           sas_token=self.sas_token)
+        try:
+            from ..file.fileservice import FileService
+            return FileService(self.account_name, self.account_key,
+                               sas_token=self.sas_token)
+        except ImportError:
+            raise Exception('The package azure-storage-file is required. '
+                            + 'Please install it using "pip install azure-storage-file"')
 
-    def generate_shared_access_signature(self, services, resource_types, 
-                                         permission, expiry, start=None, 
+    def generate_shared_access_signature(self, services, resource_types,
+                                         permission, expiry, start=None,
                                          ip=None, protocol=None):
         '''
         Generates a shared access signature for the account.
@@ -162,14 +187,14 @@ class CloudStorageAccount(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
             If the IP address from which the request originates does not match the IP address
@@ -185,5 +210,5 @@ class CloudStorageAccount(object):
         _validate_not_none('self.account_key', self.account_key)
 
         sas = SharedAccessSignature(self.account_name, self.account_key)
-        return sas.generate_account(services, resource_types, permission, 
+        return sas.generate_account(services, resource_types, permission,
                                     expiry, start=start, ip=ip, protocol=protocol)

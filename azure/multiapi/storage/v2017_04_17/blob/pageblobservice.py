@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,52 +11,54 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._error import (
+# --------------------------------------------------------------------------
+import sys
+from os import path
+
+from ..common._common_conversion import (
+    _int_to_str,
+    _to_str,
+    _datetime_to_utc_string,
+    _get_content_md5,
+)
+from ..common._constants import (
+    SERVICE_HOST_BASE,
+    DEFAULT_PROTOCOL,
+)
+from ..common._error import (
     _validate_not_none,
     _validate_type_bytes,
     _validate_encryption_required,
     _validate_encryption_unsupported,
     _ERROR_VALUE_NEGATIVE,
 )
-from .._common_conversion import (
-    _int_to_str,
-    _to_str,
-    _datetime_to_utc_string,
-    _get_content_md5,
-)
-from .._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_data_bytes_only,
     _add_metadata_headers,
-)
-from .._http import HTTPRequest
-from ._error import (
-    _ERROR_PAGE_BLOB_SIZE_ALIGNMENT,
-)
-from ._upload_chunking import (
-    _PageBlobChunkUploader,
-    _upload_blob_chunks,
-)
-from .models import (
-    _BlobTypes,
-    ResourceProperties)
-from .._constants import (
-    SERVICE_HOST_BASE,
-    DEFAULT_PROTOCOL,
-)
-from ._encryption import _generate_blob_encryption_data
-from ._serialization import (
-    _get_path,
-    _validate_and_format_range_headers,
 )
 from ._deserialization import (
     _convert_xml_to_page_ranges,
     _parse_page_properties,
     _parse_base_properties,
 )
+from ._encryption import _generate_blob_encryption_data
+from ._error import (
+    _ERROR_PAGE_BLOB_SIZE_ALIGNMENT,
+)
+from ._serialization import (
+    _get_path,
+    _validate_and_format_range_headers,
+)
+from ._upload_chunking import (
+    _PageBlobChunkUploader,
+    _upload_blob_chunks,
+)
 from .baseblobservice import BaseBlobService
-from os import path
-import sys
+from .models import (
+    _BlobTypes,
+    ResourceProperties)
+
 if sys.version_info >= (3,):
     from io import BytesIO
 else:
@@ -85,7 +87,7 @@ class PageBlobService(BaseBlobService):
 
     MAX_PAGE_SIZE = 4 * 1024 * 1024
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, 
+    def __init__(self, account_name=None, account_key=None, sas_token=None,
                  is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
                  custom_domain=None, request_session=None, connection_string=None, socket_timeout=None):
         '''
@@ -129,13 +131,13 @@ class PageBlobService(BaseBlobService):
         '''
         self.blob_type = _BlobTypes.PageBlob
         super(PageBlobService, self).__init__(
-            account_name, account_key, sas_token, is_emulated, protocol, endpoint_suffix, 
+            account_name, account_key, sas_token, is_emulated, protocol, endpoint_suffix,
             custom_domain, request_session, connection_string, socket_timeout)
 
     def create_blob(
-        self, container_name, blob_name, content_length, content_settings=None,
-        sequence_number=None, metadata=None, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None, premium_page_blob_tier=None):
+            self, container_name, blob_name, content_length, content_settings=None,
+            sequence_number=None, metadata=None, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None, premium_page_blob_tier=None):
         '''
         Creates a new Page Blob.
 
@@ -159,7 +161,7 @@ class PageBlobService(BaseBlobService):
             and 2^63 - 1.The default value is 0.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param str lease_id:
             Required if the blob has an active lease.
         :param datetime if_modified_since:
@@ -192,28 +194,28 @@ class PageBlobService(BaseBlobService):
         :return: ETag and last modified properties for the new Page Blob
         :rtype: :class:`~azure.storage.blob.models.ResourceProperties`
         '''
-        _validate_encryption_unsupported(self.require_encryption, self.key_encryption_key)     
+        _validate_encryption_unsupported(self.require_encryption, self.key_encryption_key)
 
         return self._create_blob(
-                    container_name,
-                    blob_name,
-                    content_length,
-                    content_settings=content_settings,
-                    sequence_number=sequence_number,
-                    metadata=metadata,
-                    lease_id=lease_id,
-                    premium_page_blob_tier=premium_page_blob_tier,
-                    if_modified_since=if_modified_since,
-                    if_unmodified_since=if_unmodified_since,
-                    if_match=if_match,
-                    if_none_match=if_none_match,
-                    timeout=timeout
-                )
+            container_name,
+            blob_name,
+            content_length,
+            content_settings=content_settings,
+            sequence_number=sequence_number,
+            metadata=metadata,
+            lease_id=lease_id,
+            premium_page_blob_tier=premium_page_blob_tier,
+            if_modified_since=if_modified_since,
+            if_unmodified_since=if_unmodified_since,
+            if_match=if_match,
+            if_none_match=if_none_match,
+            timeout=timeout
+        )
 
     def incremental_copy_blob(self, container_name, blob_name, copy_source,
-                  metadata=None, destination_if_modified_since=None, destination_if_unmodified_since=None,
-                  destination_if_match=None, destination_if_none_match=None, destination_lease_id=None,
-                  source_lease_id=None, timeout=None):
+                              metadata=None, destination_if_modified_since=None, destination_if_unmodified_since=None,
+                              destination_if_match=None, destination_if_none_match=None, destination_lease_id=None,
+                              source_lease_id=None, timeout=None):
         '''
         Copies an incremental copy of a blob asynchronously. This operation returns a copy operation
         properties object, including a copy ID you can use to check or abort the
@@ -240,7 +242,7 @@ class PageBlobService(BaseBlobService):
             source blob or file to the destination blob. If one or more name-value
             pairs are specified, the destination blob is created with the specified
             metadata, and metadata is not copied from the source blob or file.
-        :type metadata: A dict mapping str to str.
+        :type metadata: dict(str, str).
         :param datetime destination_if_modified_since:
             A DateTime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.
@@ -282,23 +284,23 @@ class PageBlobService(BaseBlobService):
         :rtype: :class:`~azure.storage.blob.models.CopyProperties`
         '''
         return self._copy_blob(container_name, blob_name, copy_source,
-                          metadata,
-                          source_if_modified_since=None, source_if_unmodified_since=None,
-                          source_if_match=None, source_if_none_match=None,
-                          destination_if_modified_since=destination_if_modified_since,
-                          destination_if_unmodified_since=destination_if_unmodified_since,
-                          destination_if_match=destination_if_match,
-                          destination_if_none_match=destination_if_none_match,
-                          destination_lease_id=destination_lease_id,
-                          source_lease_id=source_lease_id, timeout=timeout,
-                          incremental_copy=True)
+                               metadata,
+                               source_if_modified_since=None, source_if_unmodified_since=None,
+                               source_if_match=None, source_if_none_match=None,
+                               destination_if_modified_since=destination_if_modified_since,
+                               destination_if_unmodified_since=destination_if_unmodified_since,
+                               destination_if_match=destination_if_match,
+                               destination_if_none_match=destination_if_none_match,
+                               destination_lease_id=destination_lease_id,
+                               source_lease_id=source_lease_id, timeout=timeout,
+                               incremental_copy=True)
 
     def update_page(
-        self, container_name, blob_name, page, start_range, end_range,
-        validate_content=False, lease_id=None, if_sequence_number_lte=None,
-        if_sequence_number_lt=None, if_sequence_number_eq=None,
-        if_modified_since=None, if_unmodified_since=None,
-        if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, page, start_range, end_range,
+            validate_content=False, lease_id=None, if_sequence_number_lte=None,
+            if_sequence_number_lt=None, if_sequence_number_eq=None,
+            if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None):
         '''
         Updates a range of pages.
 
@@ -364,31 +366,31 @@ class PageBlobService(BaseBlobService):
         '''
 
         _validate_encryption_unsupported(self.require_encryption, self.key_encryption_key)
-        
+
         return self._update_page(
-                    container_name,
-                    blob_name,
-                    page,
-                    start_range,
-                    end_range,
-                    validate_content=validate_content,
-                    lease_id=lease_id,
-                    if_sequence_number_lte=if_sequence_number_lte,
-                    if_sequence_number_lt=if_sequence_number_lt,
-                    if_sequence_number_eq=if_sequence_number_eq,
-                    if_modified_since=if_modified_since,
-                    if_unmodified_since=if_unmodified_since,
-                    if_match=if_match,
-                    if_none_match=if_none_match,
-                    timeout=timeout
-                )
+            container_name,
+            blob_name,
+            page,
+            start_range,
+            end_range,
+            validate_content=validate_content,
+            lease_id=lease_id,
+            if_sequence_number_lte=if_sequence_number_lte,
+            if_sequence_number_lt=if_sequence_number_lt,
+            if_sequence_number_eq=if_sequence_number_eq,
+            if_modified_since=if_modified_since,
+            if_unmodified_since=if_unmodified_since,
+            if_match=if_match,
+            if_none_match=if_none_match,
+            timeout=timeout
+        )
 
     def clear_page(
-        self, container_name, blob_name, start_range, end_range,
-        lease_id=None, if_sequence_number_lte=None,
-        if_sequence_number_lt=None, if_sequence_number_eq=None,
-        if_modified_since=None, if_unmodified_since=None,
-        if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, start_range, end_range,
+            lease_id=None, if_sequence_number_lte=None,
+            if_sequence_number_lt=None, if_sequence_number_eq=None,
+            if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None):
         '''
         Clears a range of pages.
 
@@ -474,9 +476,9 @@ class PageBlobService(BaseBlobService):
         return self._perform_request(request, _parse_page_properties)
 
     def get_page_ranges(
-        self, container_name, blob_name, snapshot=None, start_range=None,
-        end_range=None, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, snapshot=None, start_range=None,
+            end_range=None, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
         '''
         Returns the list of valid page ranges for a Page Blob or snapshot
         of a page blob.
@@ -529,7 +531,7 @@ class PageBlobService(BaseBlobService):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: A list of valid Page Ranges for the Page Blob.
-        :rtype: list of :class:`~azure.storage.blob.models.PageRange`
+        :rtype: list(:class:`~azure.storage.blob.models.PageRange`)
         '''
         _validate_not_none('container_name', container_name)
         _validate_not_none('blob_name', blob_name)
@@ -561,9 +563,9 @@ class PageBlobService(BaseBlobService):
         return self._perform_request(request, _convert_xml_to_page_ranges)
 
     def get_page_ranges_diff(
-        self, container_name, blob_name, previous_snapshot, snapshot=None,
-        start_range=None, end_range=None, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, previous_snapshot, snapshot=None,
+            start_range=None, end_range=None, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None):
         '''
         The response will include only the pages that are different between either a
         recent snapshot or the current blob and a previous snapshot, including pages
@@ -621,7 +623,7 @@ class PageBlobService(BaseBlobService):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: A list of different Page Ranges for the Page Blob.
-        :rtype: list of :class:`~azure.storage.blob.models.PageRange`
+        :rtype: list(:class:`~azure.storage.blob.models.PageRange`)
         '''
         _validate_not_none('container_name', container_name)
         _validate_not_none('blob_name', blob_name)
@@ -655,10 +657,10 @@ class PageBlobService(BaseBlobService):
         return self._perform_request(request, _convert_xml_to_page_ranges)
 
     def set_sequence_number(
-        self, container_name, blob_name, sequence_number_action, sequence_number=None,
-        lease_id=None, if_modified_since=None, if_unmodified_since=None,
-        if_match=None, if_none_match=None, timeout=None):
-        
+            self, container_name, blob_name, sequence_number_action, sequence_number=None,
+            lease_id=None, if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None):
+
         '''
         Sets the blob sequence number.
 
@@ -668,7 +670,7 @@ class PageBlobService(BaseBlobService):
             Name of existing blob.
         :param str sequence_number_action:
             This property indicates how the service should modify the blob's sequence
-            number. See :class:`.SequenceNumberAction` for more information.
+            number. See :class:`~azure.storage.blob.models.SequenceNumberAction` for more information.
         :param str sequence_number:
             This property sets the blob's sequence number. The sequence number is a
             user-controlled property that you can use to track requests and manage
@@ -725,10 +727,10 @@ class PageBlobService(BaseBlobService):
         return self._perform_request(request, _parse_page_properties)
 
     def resize_blob(
-        self, container_name, blob_name, content_length,
-        lease_id=None, if_modified_since=None, if_unmodified_since=None,
-        if_match=None, if_none_match=None, timeout=None):
-        
+            self, container_name, blob_name, content_length,
+            lease_id=None, if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None):
+
         '''
         Resizes a page blob to the specified size. If the specified value is less
         than the current size of the blob, then all pages above the specified value
@@ -790,13 +792,13 @@ class PageBlobService(BaseBlobService):
 
         return self._perform_request(request, _parse_page_properties)
 
-    #----Convenience APIs-----------------------------------------------------
+    # ----Convenience APIs-----------------------------------------------------
 
     def create_blob_from_path(
-        self, container_name, blob_name, file_path, content_settings=None,
-        metadata=None, validate_content=False, progress_callback=None, max_connections=2,
-        lease_id=None, if_modified_since=None, if_unmodified_since=None, 
-        if_match=None, if_none_match=None, timeout=None, premium_page_blob_tier=None):
+            self, container_name, blob_name, file_path, content_settings=None,
+            metadata=None, validate_content=False, progress_callback=None, max_connections=2,
+            lease_id=None, if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None, premium_page_blob_tier=None):
         '''
         Creates a new blob from a file path, or updates the content of an
         existing blob, with automatic chunking and progress notifications.
@@ -811,7 +813,7 @@ class PageBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each page of the blob. The storage 
             service checks the hash of the content that has arrived with the hash 
@@ -823,7 +825,7 @@ class PageBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use.
         :param str lease_id:
@@ -884,13 +886,12 @@ class PageBlobService(BaseBlobService):
                 timeout=timeout,
                 premium_page_blob_tier=premium_page_blob_tier)
 
-
     def create_blob_from_stream(
-        self, container_name, blob_name, stream, count, content_settings=None,
-        metadata=None, validate_content=False, progress_callback=None,
-        max_connections=2, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None,
-        premium_page_blob_tier=None):
+            self, container_name, blob_name, stream, count, content_settings=None,
+            metadata=None, validate_content=False, progress_callback=None,
+            max_connections=2, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None,
+            premium_page_blob_tier=None):
         '''
         Creates a new blob from a file/stream, or updates the content of an
         existing blob, with automatic chunking and progress notifications.
@@ -908,7 +909,7 @@ class PageBlobService(BaseBlobService):
             ContentSettings object used to set the blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each page of the blob. The storage 
             service checks the hash of the content that has arrived with the hash 
@@ -920,7 +921,7 @@ class PageBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use. Note that parallel upload 
             requires the stream to be seekable.
@@ -1019,11 +1020,11 @@ class PageBlobService(BaseBlobService):
         return resource_properties
 
     def create_blob_from_bytes(
-        self, container_name, blob_name, blob, index=0, count=None,
-        content_settings=None, metadata=None, validate_content=False, 
-        progress_callback=None, max_connections=2, lease_id=None, 
-        if_modified_since=None, if_unmodified_since=None, if_match=None, 
-        if_none_match=None, timeout=None, premium_page_blob_tier=None):
+            self, container_name, blob_name, blob, index=0, count=None,
+            content_settings=None, metadata=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None, premium_page_blob_tier=None):
         '''
         Creates a new blob from an array of bytes, or updates the content
         of an existing blob, with automatic chunking and progress
@@ -1044,7 +1045,7 @@ class PageBlobService(BaseBlobService):
             ContentSettings object used to set blob properties.
         :param metadata:
             Name-value pairs associated with the blob as metadata.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param bool validate_content:
             If true, calculates an MD5 hash for each page of the blob. The storage 
             service checks the hash of the content that has arrived with the hash 
@@ -1056,7 +1057,7 @@ class PageBlobService(BaseBlobService):
             Callback for progress with signature function(current, total) where
             current is the number of bytes transfered so far, and total is the
             size of the blob, or None if the total size is unknown.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             Maximum number of parallel connections to use.
         :param str lease_id:
@@ -1126,8 +1127,8 @@ class PageBlobService(BaseBlobService):
             premium_page_blob_tier=premium_page_blob_tier)
 
     def set_premium_page_blob_tier(
-        self, container_name, blob_name, premium_page_blob_tier,
-        timeout=None):
+            self, container_name, blob_name, premium_page_blob_tier,
+            timeout=None):
         '''
         Sets the page blob tiers on the blob. This API is only supported for page blobs on premium accounts.
 
@@ -1185,7 +1186,7 @@ class PageBlobService(BaseBlobService):
         The destination blob cannot be modified while a copy operation is in progress.
 
         When copying from a page blob, the Blob service creates a destination page
-        blob of the source blob’s length, initially containing all zeroes. Then
+        blob of the source blob's length, initially containing all zeroes. Then
         the source page ranges are enumerated, and non-empty ranges are copied.
 
         If the tier on the source blob is larger than the tier being passed to this
@@ -1217,7 +1218,7 @@ class PageBlobService(BaseBlobService):
             source blob or file to the destination blob. If one or more name-value
             pairs are specified, the destination blob is created with the specified
             metadata, and metadata is not copied from the source blob or file.
-        :type metadata: A dict mapping str to str.
+        :type metadata: dict(str, str).
         :param datetime source_if_modified_since:
             A DateTime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.
@@ -1291,30 +1292,30 @@ class PageBlobService(BaseBlobService):
         :rtype: :class:`~azure.storage.blob.models.CopyProperties`
         '''
         return self._copy_blob(container_name, blob_name, copy_source,
-                          metadata, premium_page_blob_tier,
-                          source_if_modified_since, source_if_unmodified_since,
-                          source_if_match, source_if_none_match,
-                          destination_if_modified_since,
-                          destination_if_unmodified_since,
-                          destination_if_match,
-                          destination_if_none_match,
-                          destination_lease_id,
-                          source_lease_id, timeout,
-                          False)
+                               metadata, premium_page_blob_tier,
+                               source_if_modified_since, source_if_unmodified_since,
+                               source_if_match, source_if_none_match,
+                               destination_if_modified_since,
+                               destination_if_unmodified_since,
+                               destination_if_match,
+                               destination_if_none_match,
+                               destination_lease_id,
+                               source_lease_id, timeout,
+                               False)
 
-    #-----Helper methods-----------------------------------------------------
+    # -----Helper methods-----------------------------------------------------
 
     def _create_blob(
-        self, container_name, blob_name, content_length, content_settings=None,
-        sequence_number=None, metadata=None, lease_id=None, premium_page_blob_tier=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None,
-        encryption_data=None):
+            self, container_name, blob_name, content_length, content_settings=None,
+            sequence_number=None, metadata=None, lease_id=None, premium_page_blob_tier=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None,
+            encryption_data=None):
         '''
         See create_blob for more details. This helper method
         allows for encryption or other such special behavior because
         it is safely handled by the library. These behaviors are
         prohibited in the public version of this function.
-        :param str _encryption_data:
+        :param str encryption_data:
             The JSON formatted encryption metadata to upload as a part of the blob.
             This should only be passed internally from other methods and only applied
             when uploading entire blob contents immediately follows creation of the blob.
@@ -1349,11 +1350,11 @@ class PageBlobService(BaseBlobService):
         return self._perform_request(request, _parse_base_properties)
 
     def _update_page(
-        self, container_name, blob_name, page, start_range, end_range,
-        validate_content=False, lease_id=None, if_sequence_number_lte=None,
-        if_sequence_number_lt=None, if_sequence_number_eq=None,
-        if_modified_since=None, if_unmodified_since=None,
-        if_match=None, if_none_match=None, timeout=None):
+            self, container_name, blob_name, page, start_range, end_range,
+            validate_content=False, lease_id=None, if_sequence_number_lte=None,
+            if_sequence_number_lt=None, if_sequence_number_eq=None,
+            if_modified_since=None, if_unmodified_since=None,
+            if_match=None, if_none_match=None, timeout=None):
         '''
         See update_page for more details. This helper method
         allows for encryption or other such special behavior because

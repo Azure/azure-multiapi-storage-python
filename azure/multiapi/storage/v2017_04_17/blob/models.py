@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from .._common_conversion import _to_str
-class Container(object):
+# --------------------------------------------------------------------------
+from ..common._common_conversion import _to_str
 
+
+class Container(object):
     '''
     Blob container class. 
     
@@ -25,7 +26,7 @@ class Container(object):
         This var is set to None unless the include=metadata param was included 
         for the list containers operation. If this parameter was specified but the 
         container has no metadata, metadata will be set to an empty dictionary.
-    :vartype metadata: dict mapping str to str
+    :vartype metadata: dict(str, str)
     :ivar ContainerProperties properties:
         System properties for the container.
     '''
@@ -37,7 +38,6 @@ class Container(object):
 
 
 class ContainerProperties(object):
-
     '''
     Blob container's properties class.
     
@@ -58,7 +58,6 @@ class ContainerProperties(object):
 
 
 class Blob(object):
-
     '''
     Blob class.
     
@@ -76,6 +75,7 @@ class Blob(object):
     :ivar metadata:
         Name-value pairs associated with the blob as metadata.
     '''
+
     def __init__(self, name=None, snapshot=None, content=None, props=None, metadata=None):
         self.name = name
         self.snapshot = snapshot
@@ -85,7 +85,6 @@ class Blob(object):
 
 
 class BlobProperties(object):
-
     '''
     Blob Properties
     
@@ -133,7 +132,6 @@ class BlobProperties(object):
 
 
 class ContentSettings(object):
-
     '''
     Used to store the content settings of a blob.
     
@@ -161,10 +159,9 @@ class ContentSettings(object):
     '''
 
     def __init__(
-        self, content_type=None, content_encoding=None,
-        content_language=None, content_disposition=None,
-        cache_control=None, content_md5=None):
-        
+            self, content_type=None, content_encoding=None,
+            content_language=None, content_disposition=None,
+            cache_control=None, content_md5=None):
         self.content_type = content_type
         self.content_encoding = content_encoding
         self.content_language = content_language
@@ -233,7 +230,6 @@ class CopyProperties(object):
 
 
 class LeaseProperties(object):
-
     '''
     Blob Lease Properties.
     
@@ -280,7 +276,6 @@ class BlobBlockState(object):
 
 
 class BlobBlock(object):
-
     '''
     BlockBlob Block class.
     
@@ -302,24 +297,23 @@ class BlobBlock(object):
 
 
 class BlobBlockList(object):
-
     '''
     Blob Block List class.
    
     :ivar committed_blocks:
         List of committed blocks.
-    :vartype committed_blocks: list of :class:`BlobBlock`
+    :vartype committed_blocks: list(:class:`~azure.storage.blob.models.BlobBlock`)
     :ivar uncommitted_blocks:
         List of uncommitted blocks.
-    :vartype uncommitted_blocks: list of :class:`BlobBlock`
+    :vartype uncommitted_blocks: list(:class:`~azure.storage.blob.models.BlobBlock`)
     '''
 
     def __init__(self):
         self.committed_blocks = list()
         self.uncommitted_blocks = list()
 
-class PageRange(object):
 
+class PageRange(object):
     '''
     Page Range for page blob.
     
@@ -337,8 +331,8 @@ class PageRange(object):
         self.end = end
         self.is_cleared = is_cleared
 
-class ResourceProperties(object):
 
+class ResourceProperties(object):
     '''
     Base response for a resource request.
     
@@ -353,8 +347,8 @@ class ResourceProperties(object):
         self.last_modified = None
         self.etag = None
 
-class AppendBlockProperties(ResourceProperties):
 
+class AppendBlockProperties(ResourceProperties):
     '''
     Response for an append block request.
     
@@ -371,7 +365,6 @@ class AppendBlockProperties(ResourceProperties):
 
 
 class PageBlobProperties(ResourceProperties):
-
     '''
     Response for a page request.
     
@@ -409,6 +402,7 @@ class PublicAccess(object):
     within the storage account.
     '''
 
+
 class DeleteSnapshot(object):
     '''
     Required if the blob has associated snapshots. Specifies how to handle the snapshots.
@@ -423,6 +417,7 @@ class DeleteSnapshot(object):
     '''
     Delete only the blob's snapshots and not the blob itself.
     '''
+
 
 class BlockListType(object):
     '''
@@ -477,6 +472,7 @@ class _LeaseActions(object):
     Renew = 'renew'
     '''Renew the lease.'''
 
+
 class _BlobTypes(object):
     '''Blob type options.'''
 
@@ -489,8 +485,8 @@ class _BlobTypes(object):
     PageBlob = 'PageBlob'
     '''Page blob type.'''
 
-class Include(object):
 
+class Include(object):
     '''
     Specifies the datasets to include in the blob list response.
 
@@ -506,7 +502,7 @@ class Include(object):
         been committed using Put Block List, be included in the response.
     '''
 
-    def __init__(self, snapshots=False, metadata=False, uncommitted_blobs=False, 
+    def __init__(self, snapshots=False, metadata=False, uncommitted_blobs=False,
                  copy=False, _str=None):
         '''
         :param bool snapshots:
@@ -529,19 +525,20 @@ class Include(object):
         self.metadata = metadata or ('metadata' in components)
         self.uncommitted_blobs = uncommitted_blobs or ('uncommittedblobs' in components)
         self.copy = copy or ('copy' in components)
-    
+
     def __or__(self, other):
         return Include(_str=str(self) + str(other))
 
     def __add__(self, other):
         return Include(_str=str(self) + str(other))
-    
+
     def __str__(self):
-        include = (('snapshots,' if self.snapshots else '') + 
+        include = (('snapshots,' if self.snapshots else '') +
                    ('metadata,' if self.metadata else '') +
                    ('uncommittedblobs,' if self.uncommitted_blobs else '') +
                    ('copy,' if self.copy else ''))
         return include.rstrip(',')
+
 
 Include.COPY = Include(copy=True)
 Include.METADATA = Include(metadata=True)
@@ -550,7 +547,6 @@ Include.UNCOMMITTED_BLOBS = Include(uncommitted_blobs=True)
 
 
 class BlobPermissions(object):
-
     '''
     BlobPermissions class to be used with 
     :func:`~azure.storage.blob.baseblobservice.BaseBlobService.generate_blob_shared_access_signature` API.
@@ -569,7 +565,7 @@ class BlobPermissions(object):
         copy operation within the same account.
     '''
 
-    def __init__(self, read=False, add=False, create=False, write=False, 
+    def __init__(self, read=False, add=False, create=False, write=False,
                  delete=False, _str=None):
         '''    
         :param bool read:
@@ -595,19 +591,20 @@ class BlobPermissions(object):
         self.create = create or ('c' in _str)
         self.write = write or ('w' in _str)
         self.delete = delete or ('d' in _str)
-    
+
     def __or__(self, other):
         return BlobPermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return BlobPermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('a' if self.add else '') +
                 ('c' if self.create else '') +
                 ('w' if self.write else '') +
                 ('d' if self.delete else ''))
+
 
 BlobPermissions.ADD = BlobPermissions(add=True)
 BlobPermissions.CREATE = BlobPermissions(create=True)
@@ -617,7 +614,6 @@ BlobPermissions.WRITE = BlobPermissions(write=True)
 
 
 class ContainerPermissions(object):
-
     '''
     ContainerPermissions class to be used with :func:`~azure.storage.blob.baseblobservice.BaseBlobService.generate_container_shared_access_signature`
     API and for the AccessPolicies used with :func:`~azure.storage.blob.baseblobservice.BaseBlobService.set_container_acl`. 
@@ -639,7 +635,7 @@ class ContainerPermissions(object):
         a container SAS. Use an account SAS instead.
     '''
 
-    def __init__(self, read=False, write=False, delete=False, list=False, 
+    def __init__(self, read=False, write=False, delete=False, list=False,
                  _str=None):
         '''
         :param bool read:
@@ -666,23 +662,25 @@ class ContainerPermissions(object):
         self.write = write or ('w' in _str)
         self.delete = delete or ('d' in _str)
         self.list = list or ('l' in _str)
-    
+
     def __or__(self, other):
         return ContainerPermissions(_str=str(self) + str(other))
 
     def __add__(self, other):
         return ContainerPermissions(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('w' if self.write else '') +
-                ('d' if self.delete else '') + 
+                ('d' if self.delete else '') +
                 ('l' if self.list else ''))
+
 
 ContainerPermissions.DELETE = ContainerPermissions(delete=True)
 ContainerPermissions.LIST = ContainerPermissions(list=True)
 ContainerPermissions.READ = ContainerPermissions(read=True)
 ContainerPermissions.WRITE = ContainerPermissions(write=True)
+
 
 class PremiumPageBlobTier(object):
     '''
@@ -715,6 +713,7 @@ class PremiumPageBlobTier(object):
 
     P60 = 'P60'
     ''' P60 Tier '''
+
 
 class StandardBlobTier(object):
     '''

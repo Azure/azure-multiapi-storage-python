@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from ._error import (
     _ERROR_INCORRECT_PARTITION_KEY_IN_BATCH,
     _ERROR_DUPLICATE_ROW_KEY_IN_BATCH,
     _ERROR_TOO_MANY_ENTITIES_IN_BATCH,
-)
-from .models import (
-    AzureBatchValidationError,
 )
 from ._request import (
     _insert_entity,
@@ -28,9 +25,12 @@ from ._request import (
     _insert_or_replace_entity,
     _insert_or_merge_entity,
 )
+from .models import (
+    AzureBatchValidationError,
+)
+
 
 class TableBatch(object):
-
     '''
     This is the class that is used for batch operation for storage table service.
 
@@ -60,7 +60,7 @@ class TableBatch(object):
         :param entity:
             The entity to insert. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         '''
         request = _insert_entity(entity, self._require_encryption, self._key_encryption_key,
                                  self._encryption_resolver)
@@ -77,7 +77,7 @@ class TableBatch(object):
         :param entity:
             The entity to update. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param str if_match:
             The client may specify the ETag for the entity on the 
             request in order to compare to the ETag maintained by the service 
@@ -102,7 +102,7 @@ class TableBatch(object):
         :param entity:
             The entity to merge. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         :param str if_match:
             The client may specify the ETag for the entity on the 
             request in order to compare to the ETag maintained by the service 
@@ -112,7 +112,7 @@ class TableBatch(object):
             not been modified since it was retrieved by the client. To force 
             an unconditional merge, set If-Match to the wildcard character (*).
         '''
-        
+
         request = _merge_entity(entity, if_match, self._require_encryption,
                                 self._key_encryption_key)
         self._add_to_batch(entity['PartitionKey'], entity['RowKey'], request)
@@ -153,7 +153,7 @@ class TableBatch(object):
         :param entity:
             The entity to insert or replace. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
        '''
         request = _insert_or_replace_entity(entity, self._require_encryption, self._key_encryption_key,
                                             self._encryption_resolver)
@@ -170,7 +170,7 @@ class TableBatch(object):
         :param entity:
             The entity to insert or merge. Could be a dict or an entity object. 
             Must contain a PartitionKey and a RowKey.
-        :type entity: a dict or :class:`azure.storage.table.models.Entity`
+        :type entity: dict or :class:`~azure.storage.table.models.Entity`
         '''
 
         request = _insert_or_merge_entity(entity, self._require_encryption,
@@ -200,7 +200,7 @@ class TableBatch(object):
             raise AzureBatchValidationError(_ERROR_DUPLICATE_ROW_KEY_IN_BATCH)
         else:
             self._row_keys.append(row_key)
-        
+
         # 100 entities
         if len(self._requests) >= 100:
             raise AzureBatchValidationError(_ERROR_TOO_MANY_ENTITIES_IN_BATCH)

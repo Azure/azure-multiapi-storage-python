@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from dateutil import parser
+
 try:
     from xml.etree import cElementTree as ETree
 except ImportError:
@@ -22,16 +23,17 @@ from .models import (
     Queue,
     QueueMessage,
 )
-from ..models import (
+from ..common.models import (
     _list,
 )
-from .._deserialization import (
+from ..common._deserialization import (
     _int_to_str,
     _parse_metadata,
 )
 from ._encryption import (
     _decrypt_queue_message,
 )
+
 
 def _parse_metadata_and_message_count(response):
     '''
@@ -42,6 +44,7 @@ def _parse_metadata_and_message_count(response):
 
     return metadata
 
+
 def _parse_queue_message_from_headers(response):
     '''
     Extracts pop receipt and time next visible from headers.
@@ -49,8 +52,9 @@ def _parse_queue_message_from_headers(response):
     message = QueueMessage()
     message.pop_receipt = response.headers.get('x-ms-popreceipt')
     message.time_next_visible = parser.parse(response.headers.get('x-ms-time-next-visible'))
-    
+
     return message
+
 
 def _convert_xml_to_queues(response):
     '''
@@ -74,7 +78,7 @@ def _convert_xml_to_queues(response):
 
     queues = _list()
     list_element = ETree.fromstring(response.body)
-    
+
     # Set next marker
     next_marker = list_element.findtext('NextMarker') or None
     setattr(queues, 'next_marker', next_marker)
@@ -92,13 +96,15 @@ def _convert_xml_to_queues(response):
             queue.metadata = dict()
             for metadata_element in metadata_root_element:
                 queue.metadata[metadata_element.tag] = metadata_element.text
-        
+
         # Add queue to list
         queues.append(queue)
 
     return queues
 
-def _convert_xml_to_queue_messages(response, decode_function, require_encryption, key_encryption_key, resolver, content=None):
+
+def _convert_xml_to_queue_messages(response, decode_function, require_encryption, key_encryption_key, resolver,
+                                   content=None):
     '''
     <?xml version="1.0" encoding="utf-8"?>
     <QueueMessagesList>
@@ -135,12 +141,12 @@ def _convert_xml_to_queue_messages(response, decode_function, require_encryption
             message.content = message_element.findtext('MessageText')
             if (key_encryption_key is not None) or (resolver is not None):
                 message.content = _decrypt_queue_message(message.content, require_encryption,
-                                                            key_encryption_key, resolver)
+                                                         key_encryption_key, resolver)
             message.content = decode_function(message.content)
 
         message.insertion_time = parser.parse(message_element.findtext('InsertionTime'))
         message.expiration_time = parser.parse(message_element.findtext('ExpirationTime'))
-        
+
         message.pop_receipt = message_element.findtext('PopReceipt')
 
         time_next_visible = message_element.find('TimeNextVisible')

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,44 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import sys
+
 if sys.version_info < (3,):
     from collections import Iterable
+
     _unicode_type = unicode
 else:
     from collections.abc import Iterable
+
     _unicode_type = str
 
 from ._error import (
-    _validate_not_none,
-    _ERROR_UNKNOWN_KEY_WRAP_ALGORITHM
+    _validate_not_none
 )
-from cryptography.hazmat.primitives.keywrap import(
-    aes_key_wrap,
-    aes_key_unwrap,
-)
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
-from cryptography.hazmat.primitives.asymmetric.padding import (
-    OAEP,
-    MGF1,
-)
-from cryptography.hazmat.primitives.hashes import SHA1
-from os import urandom
+
 
 class _HeaderDict(dict):
-
     def __getitem__(self, index):
         return super(_HeaderDict, self).__getitem__(index.lower())
+
 
 class _list(list):
     '''Used so that additional properties can be set on the return list'''
     pass
 
+
 class _dict(dict):
     '''Used so that additional properties can be set on the return dictionary'''
     pass
+
 
 class _OperationContext(object):
     '''
@@ -60,9 +53,11 @@ class _OperationContext(object):
     :ivar str location: 
         The location to lock to.
     '''
+
     def __init__(self, location_lock=False):
         self.location_lock = location_lock
         self.host_location = None
+
 
 class ListGenerator(Iterable):
     '''
@@ -75,6 +70,7 @@ class ListGenerator(Iterable):
     finishes. This marker can be used to create a new generator if more 
     results are desired.
     '''
+
     def __init__(self, resources, list_method, list_args, list_kwargs):
         self.items = resources
         self.next_marker = resources.next_marker
@@ -124,17 +120,19 @@ class RetryContext(object):
     whether and how to retry. This context is stored across retries and may be 
     used to store other information relevant to the retry strategy.
 
-    :ivar :class:`~azure.storage._http.HTTPRequest` request: 
+    :ivar ~azure.storage.common._http.HTTPRequest request:
         The request sent to the storage service.
-    :ivar :class:`~azure.storage._http.HTTPResponse` response: 
+    :ivar ~azure.storage.common._http.HTTPResponse response:
         The response returned by the storage service.
     :ivar LocationMode location_mode: 
         The location the request was sent to.
     '''
+
     def __init__(self):
         self.request = None
         self.response = None
         self.location_mode = None
+
 
 class LocationMode(object):
     '''
@@ -151,7 +149,6 @@ class LocationMode(object):
 
 
 class RetentionPolicy(object):
-
     '''
     By default, Storage Analytics will not delete any logging or metrics data. Blobs 
     and table entities will continue to be written until the shared 20TB limit is 
@@ -186,7 +183,6 @@ class RetentionPolicy(object):
 
 
 class Logging(object):
-
     '''
     Storage Analytics logs detailed information about successful and failed requests 
     to a storage service. This information can be used to monitor individual requests 
@@ -226,8 +222,7 @@ class Logging(object):
 
 
 class Metrics(object):
-
-    ''' 
+    '''
     Metrics include aggregated transaction statistics and capacity data about requests 
     to a storage service. Transactions are reported at both the API operation level 
     as well as at the storage service level, and capacity is reported at the storage 
@@ -261,7 +256,6 @@ class Metrics(object):
 
 
 class CorsRule(object):
-
     '''
     CORS is an HTTP feature that enables a web application running under one domain 
     to access resources in another domain. Web browsers implement a security 
@@ -279,12 +273,12 @@ class CorsRule(object):
             A list of origin domains that will be allowed via CORS, or "*" to allow 
             all domains. The list of must contain at least one entry. Limited to 64 
             origin domains. Each allowed origin can have up to 256 characters.
-        :type allowed_origins: list of str
+        :type allowed_origins: list(str)
         :param allowed_methods:
             A list of HTTP methods that are allowed to be executed by the origin. 
             The list of must contain at least one entry. For Azure Storage, 
             permitted methods are DELETE, GET, HEAD, MERGE, POST, OPTIONS or PUT.
-        :type allowed_methods: list of str
+        :type allowed_methods: list(str)
         :param int max_age_in_seconds:
             The number of seconds that the client/browser should cache a 
             preflight response.
@@ -292,12 +286,12 @@ class CorsRule(object):
             Defaults to an empty list. A list of response headers to expose to CORS 
             clients. Limited to 64 defined headers and two prefixed headers. Each 
             header can be up to 256 characters.
-        :type exposed_headers: list of str
+        :type exposed_headers: list(str)
         :param allowed_headers:
             Defaults to an empty list. A list of headers allowed to be part of 
             the cross-origin request. Limited to 64 defined headers and 2 prefixed 
             headers. Each header can be up to 256 characters.
-        :type allowed_headers: list of str
+        :type allowed_headers: list(str)
         '''
         _validate_not_none("allowed_origins", allowed_origins)
         _validate_not_none("allowed_methods", allowed_methods)
@@ -371,8 +365,7 @@ class GeoReplication(object):
 
 
 class AccessPolicy(object):
-
-    ''' 
+    '''
     Access Policy class used by the set and get acl methods in each service.
 
     A stored access policy can specify the start time, expiry time, and 
@@ -408,14 +401,14 @@ class AccessPolicy(object):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         '''
         self.start = start
         self.expiry = expiry
@@ -434,8 +427,8 @@ class Protocol(object):
     HTTPS_HTTP = 'https,http'
     ''' Allow HTTP and HTTPS requests. '''
 
-class ResourceTypes(object):
 
+class ResourceTypes(object):
     '''
     Specifies the resource types that are accessible with the account SAS.
 
@@ -450,6 +443,7 @@ class ResourceTypes(object):
         Access to service-level APIs (e.g., Get/Set Service Properties, 
         Get Service Stats, List Containers/Queues/Tables/Shares) 
     '''
+
     def __init__(self, service=False, container=False, object=False, _str=None):
         '''
         :param bool service:
@@ -470,17 +464,18 @@ class ResourceTypes(object):
         self.service = service or ('s' in _str)
         self.container = container or ('c' in _str)
         self.object = object or ('o' in _str)
-    
+
     def __or__(self, other):
         return ResourceTypes(_str=str(self) + str(other))
 
     def __add__(self, other):
         return ResourceTypes(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('s' if self.service else '') +
                 ('c' if self.container else '') +
                 ('o' if self.object else ''))
+
 
 ResourceTypes.SERVICE = ResourceTypes(service=True)
 ResourceTypes.CONTAINER = ResourceTypes(container=True)
@@ -488,15 +483,15 @@ ResourceTypes.OBJECT = ResourceTypes(object=True)
 
 
 class Services(object):
-
     '''
     Specifies the services accessible with the account SAS.
 
     :ivar Services Services.BLOB: The blob service.
-    :ivar Services Services.FILE: The file service 
+    :ivar Services Services.FILE: The file service
     :ivar Services Services.QUEUE: The queue service.
-    :ivar Services Services.TABLE: The table service 
+    :ivar Services Services.TABLE: The table service
     '''
+
     def __init__(self, blob=False, queue=False, table=False, file=False, _str=None):
         '''
         :param bool blob:
@@ -516,18 +511,19 @@ class Services(object):
         self.queue = queue or ('q' in _str)
         self.table = table or ('t' in _str)
         self.file = file or ('f' in _str)
-    
+
     def __or__(self, other):
         return Services(_str=str(self) + str(other))
 
     def __add__(self, other):
         return Services(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('b' if self.blob else '') +
                 ('q' if self.queue else '') +
                 ('t' if self.table else '') +
                 ('f' if self.file else ''))
+
 
 Services.BLOB = Services(blob=True)
 Services.QUEUE = Services(queue=True)
@@ -536,7 +532,6 @@ Services.FILE = Services(file=True)
 
 
 class AccountPermissions(object):
-
     '''
     :class:`~ResourceTypes` class to be used with generate_shared_access_signature 
     method and for the AccessPolicies used with set_*_acl. There are two types of 
@@ -567,7 +562,8 @@ class AccountPermissions(object):
         Valid for all signed resources types (Service, Container, and Object). 
         Permits write permissions to the specified resource type. 
     '''
-    def __init__(self, read=False, write=False, delete=False, list=False, 
+
+    def __init__(self, read=False, write=False, delete=False, list=False,
                  add=False, create=False, update=False, process=False, _str=None):
         '''
         :param bool read:
@@ -605,13 +601,13 @@ class AccountPermissions(object):
         self.create = create or ('c' in _str)
         self.update = update or ('u' in _str)
         self.process = process or ('p' in _str)
-    
+
     def __or__(self, other):
         return ResourceTypes(_str=str(self) + str(other))
 
     def __add__(self, other):
         return ResourceTypes(_str=str(self) + str(other))
-    
+
     def __str__(self):
         return (('r' if self.read else '') +
                 ('w' if self.write else '') +
@@ -621,6 +617,7 @@ class AccountPermissions(object):
                 ('c' if self.create else '') +
                 ('u' if self.update else '') +
                 ('p' if self.process else ''))
+
 
 AccountPermissions.READ = AccountPermissions(read=True)
 AccountPermissions.WRITE = AccountPermissions(write=True)

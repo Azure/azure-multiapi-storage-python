@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 import sys
 
 from dateutil import parser
+
 if sys.version_info < (3,):
     from urllib2 import quote as url_quote
 else:
@@ -22,14 +23,14 @@ else:
 from json import (
     loads,
 )
-from .._http import HTTPResponse
+from ..common._http import HTTPResponse
 from azure.common import (
     AzureException,
 )
-from .._common_conversion import (
+from ..common._common_conversion import (
     _decode_base64_to_bytes,
 )
-from .._error import (
+from ..common._error import (
     _ERROR_DECRYPTION_FAILURE,
     _validate_decryption_required,
 )
@@ -44,14 +45,14 @@ from .models import (
     EdmType,
     AzureBatchOperationError,
 )
-from ..models import (
+from ..common.models import (
     _list,
-    _HeaderDict,
 )
 from ._encryption import (
     _decrypt_entity,
     _extract_encryption_metadata,
 )
+
 
 def _get_continuation_from_response_headers(response):
     marker = {}
@@ -59,6 +60,7 @@ def _get_continuation_from_response_headers(response):
         if name.startswith('x-ms-continuation'):
             marker[name[len('x-ms-continuation') + 1:]] = value
     return marker
+
 
 # Tables of conversions to and from entity types.  We support specific
 # datatypes, and beyond that the user can use an EntityProperty to get
@@ -81,7 +83,6 @@ def _from_entity_datetime(value):
 _EDM_TYPES = [EdmType.BINARY, EdmType.INT64, EdmType.GUID, EdmType.DATETIME,
               EdmType.STRING, EdmType.INT32, EdmType.DOUBLE, EdmType.BOOLEAN]
 
-
 _ENTITY_TO_PYTHON_CONVERSIONS = {
     EdmType.BINARY: _from_entity_binary,
     EdmType.INT32: _from_entity_int32,
@@ -89,6 +90,7 @@ _ENTITY_TO_PYTHON_CONVERSIONS = {
     EdmType.DOUBLE: float,
     EdmType.DATETIME: _from_entity_datetime,
 }
+
 
 def _convert_json_response_to_entity(response, property_resolver, require_encryption,
                                      key_encryption_key, key_resolver):
@@ -108,7 +110,7 @@ def _convert_json_response_to_entity(response, property_resolver, require_encryp
         return None
 
     root = loads(response.body.decode('utf-8'))
-    return _decrypt_and_deserialize_entity(root, property_resolver, require_encryption, 
+    return _decrypt_and_deserialize_entity(root, property_resolver, require_encryption,
                                            key_encryption_key, key_resolver)
 
 
@@ -159,19 +161,18 @@ def _convert_json_to_entity(entry_element, property_resolver, encrypted_properti
     timestamp = properties.pop('Timestamp', None)
     if timestamp:
         entity['Timestamp'] = _from_entity_datetime(timestamp)
-        
+
     for name, value in properties.items():
-        mtype = edmtypes.get(name);
+        mtype = edmtypes.get(name)
 
         # use the property resolver if present
         if property_resolver:
             # Clients are not expected to resolve these interal fields.
             # This check avoids unexpected behavior from the user-defined 
             # property resolver.
-            if not (name == '_ClientEncryptionMetadata1' or \
-                name == '_ClientEncryptionMetadata2'):
-                mtype = property_resolver(partition_key, row_key, 
-                                            name, value, mtype)
+            if not (name == '_ClientEncryptionMetadata1' or name == '_ClientEncryptionMetadata2'):
+                mtype = property_resolver(partition_key, row_key,
+                                          name, value, mtype)
 
                 # throw if the type returned is not a valid edm type
                 if mtype and mtype not in _EDM_TYPES:
@@ -186,7 +187,7 @@ def _convert_json_to_entity(entry_element, property_resolver, encrypted_properti
             mtype = EdmType.INT32
 
         # no type info, property should parse automatically
-        if not mtype: 
+        if not mtype:
             entity[name] = value
         else:  # need an object to hold the property
             conv = _ENTITY_TO_PYTHON_CONVERSIONS.get(mtype)
@@ -208,7 +209,7 @@ def _convert_json_to_entity(entry_element, property_resolver, encrypted_properti
     # extract etag from entry
     etag = odata.get('etag')
     if timestamp:
-         etag = 'W/"datetime\'' + url_quote(timestamp) + '\'"'
+        etag = 'W/"datetime\'' + url_quote(timestamp) + '\'"'
     entity['etag'] = etag
 
     return entity
@@ -260,11 +261,12 @@ def _convert_json_response_to_entities(response, property_resolver, require_encr
 
     return entities
 
-def _decrypt_and_deserialize_entity(entity, property_resolver, require_encryption, 
+
+def _decrypt_and_deserialize_entity(entity, property_resolver, require_encryption,
                                     key_encryption_key, key_resolver):
     try:
         _validate_decryption_required(require_encryption, key_encryption_key,
-                                          key_resolver)
+                                      key_resolver)
         entity_iv, encrypted_properties, content_encryption_key, isJavaV1 = None, None, None, False
         if (key_encryption_key is not None) or (key_resolver is not None):
             entity_iv, encrypted_properties, content_encryption_key, isJavaV1 = \
@@ -273,16 +275,17 @@ def _decrypt_and_deserialize_entity(entity, property_resolver, require_encryptio
         raise AzureException(_ERROR_DECRYPTION_FAILURE)
 
     entity = _convert_json_to_entity(entity, property_resolver, encrypted_properties)
-            
+
     if entity_iv is not None and encrypted_properties is not None and \
-        content_encryption_key is not None:
+                    content_encryption_key is not None:
         try:
             entity = _decrypt_entity(entity, encrypted_properties, content_encryption_key,
-                            entity_iv, isJavaV1)
+                                     entity_iv, isJavaV1)
         except:
             raise AzureException(_ERROR_DECRYPTION_FAILURE)
 
     return entity
+
 
 def _extract_etag(response):
     ''' Extracts the etag from the response headers. '''
@@ -290,6 +293,7 @@ def _extract_etag(response):
         return response.headers.get('etag')
 
     return None
+
 
 def _parse_batch_response(response):
     if response is None or response.body is None:
@@ -308,8 +312,9 @@ def _parse_batch_response(response):
 
     return responses
 
+
 def _parse_batch_response_part(part):
-    lines = part.splitlines();
+    lines = part.splitlines()
 
     # First line is the HTTP status/reason
     status, _, reason = lines[0].partition(b' ')[2].partition(b' ')
@@ -328,6 +333,7 @@ def _parse_batch_response_part(part):
             headers[headerName.lower().decode("utf-8")] = headerVal.decode("utf-8")
 
     return HTTPResponse(int(status), reason.strip(), headers, body)
+
 
 def _parse_batch_error(part):
     doc = loads(part.body.decode('utf-8'))

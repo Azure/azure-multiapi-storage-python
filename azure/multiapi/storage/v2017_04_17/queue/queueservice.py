@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,16 +11,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 from azure.common import (
     AzureConflictHttpError,
     AzureHttpError,
 )
-from .._constants import (
+
+from ..common._auth import (
+    _StorageSASAuthentication,
+    _StorageSharedKeyAuthentication,
+)
+from ..common._common_conversion import (
+    _int_to_str,
+    _to_str,
+)
+from ..common._connection import _ServiceParameters
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from .._error import (
+from ..common._deserialization import (
+    _convert_xml_to_service_properties,
+    _convert_xml_to_signed_identifiers,
+    _convert_xml_to_service_stats,
+)
+from ..common._error import (
     _dont_fail_not_exist,
     _dont_fail_on_exist,
     _validate_not_none,
@@ -30,59 +45,44 @@ from .._error import (
     _validate_encryption_required,
     _validate_decryption_required,
 )
-from .._serialization import (
+from ..common._http import (
+    HTTPRequest,
+)
+from ..common._serialization import (
+    _convert_signed_identifiers_to_xml,
+    _convert_service_properties_to_xml,
+)
+from ..common._serialization import (
     _get_request_body,
     _add_metadata_headers,
 )
-from .._common_conversion import (
-    _int_to_str,
-    _to_str,
-)
-from .._http import (
-    HTTPRequest,
-)
-from ..models import (
+from ..common.models import (
     Services,
     ListGenerator,
     _OperationContext,
 )
-from .models import (
-    QueueMessageFormat,
+from ..common.sharedaccesssignature import (
+    SharedAccessSignature,
 )
-from .._auth import (
-    _StorageSASAuthentication,
-    _StorageSharedKeyAuthentication,
-)
-from .._connection import _ServiceParameters
-from .._serialization import (
-    _convert_signed_identifiers_to_xml,
-    _convert_service_properties_to_xml,
-)
-from .._deserialization import (
-    _convert_xml_to_service_properties,
-    _convert_xml_to_signed_identifiers,
-    _convert_xml_to_service_stats,
-)
-from ._serialization import (
-    _convert_queue_message_xml,
-    _get_path,
-)
+from ..common.storageclient import StorageClient
 from ._deserialization import (
     _convert_xml_to_queues,
     _convert_xml_to_queue_messages,
     _parse_queue_message_from_headers,
     _parse_metadata_and_message_count,
 )
-from ..sharedaccesssignature import (
-    SharedAccessSignature,
+from ._serialization import (
+    _convert_queue_message_xml,
+    _get_path,
 )
-from ..storageclient import StorageClient
-
+from .models import (
+    QueueMessageFormat,
+)
 
 _HTTP_RESPONSE_NO_CONTENT = 204
 
-class QueueService(StorageClient):
 
+class QueueService(StorageClient):
     '''
     This is the main class managing queue resources.
 
@@ -130,7 +130,7 @@ class QueueService(StorageClient):
         parameters for encryption/decryption must be provided. See the above comments on the key_encryption_key and resolver.
     '''
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, 
+    def __init__(self, account_name=None, account_key=None, sas_token=None,
                  is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
                  request_session=None, connection_string=None, socket_timeout=None):
         '''
@@ -167,16 +167,16 @@ class QueueService(StorageClient):
         '''
         service_params = _ServiceParameters.get_service_parameters(
             'queue',
-            account_name=account_name, 
-            account_key=account_key, 
-            sas_token=sas_token, 
-            is_emulated=is_emulated, 
-            protocol=protocol, 
+            account_name=account_name,
+            account_key=account_key,
+            sas_token=sas_token,
+            is_emulated=is_emulated,
+            protocol=protocol,
             endpoint_suffix=endpoint_suffix,
             request_session=request_session,
             connection_string=connection_string,
             socket_timeout=socket_timeout)
-            
+
         super(QueueService, self).__init__(service_params)
 
         if self.account_key:
@@ -195,8 +195,8 @@ class QueueService(StorageClient):
         self.key_resolver_function = None
         self.require_encryption = False
 
-    def generate_account_shared_access_signature(self, resource_types, permission, 
-                                        expiry, start=None, ip=None, protocol=None):
+    def generate_account_shared_access_signature(self, resource_types, permission,
+                                                 expiry, start=None, ip=None, protocol=None):
         '''
         Generates a shared access signature for the queue service.
         Use the returned signature with the sas_token parameter of QueueService.
@@ -216,14 +216,14 @@ class QueueService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
             If the IP address from which the request originates does not match the IP address
@@ -232,7 +232,7 @@ class QueueService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :return: A Shared Access Signature (sas) token.
         :rtype: str
         '''
@@ -240,15 +240,15 @@ class QueueService(StorageClient):
         _validate_not_none('self.account_key', self.account_key)
 
         sas = SharedAccessSignature(self.account_name, self.account_key)
-        return sas.generate_account(Services.QUEUE, resource_types, permission, 
+        return sas.generate_account(Services.QUEUE, resource_types, permission,
                                     expiry, start=start, ip=ip, protocol=protocol)
 
     def generate_queue_shared_access_signature(self, queue_name,
-                                         permission=None, 
-                                         expiry=None,                                       
-                                         start=None,
-                                         id=None,
-                                         ip=None, protocol=None,):
+                                               permission=None,
+                                               expiry=None,
+                                               start=None,
+                                               id=None,
+                                               ip=None, protocol=None, ):
         '''
         Generates a shared access signature for the queue.
         Use the returned signature with the sas_token parameter of QueueService.
@@ -268,14 +268,14 @@ class QueueService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use :func:`~set_queue_acl`.
@@ -287,7 +287,7 @@ class QueueService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :return: A Shared Access Signature (sas) token.
         :rtype: str
         '''
@@ -298,9 +298,9 @@ class QueueService(StorageClient):
         sas = SharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_queue(
             queue_name,
-            permission=permission, 
+            permission=permission,
             expiry=expiry,
-            start=start, 
+            start=start,
             id=id,
             ip=ip,
             protocol=protocol,
@@ -328,7 +328,7 @@ class QueueService(StorageClient):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: The queue service stats.
-        :rtype: :class:`~azure.storage.models.ServiceStats`
+        :rtype: :class:`~azure.storage.common.models.ServiceStats`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -350,7 +350,7 @@ class QueueService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: The queue service properties.
-        :rtype: :class:`~azure.storage.models.ServiceProperties`
+        :rtype: :class:`~azure.storage.common.models.ServiceProperties`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -364,8 +364,8 @@ class QueueService(StorageClient):
 
         return self._perform_request(request, _convert_xml_to_service_properties)
 
-    def set_queue_service_properties(self, logging=None, hour_metrics=None, 
-                                    minute_metrics=None, cors=None, timeout=None):
+    def set_queue_service_properties(self, logging=None, hour_metrics=None,
+                                     minute_metrics=None, cors=None, timeout=None):
         '''
         Sets the properties of a storage account's Queue service, including
         Azure Storage Analytics. If an element (ex Logging) is left as None, the 
@@ -387,7 +387,7 @@ class QueueService(StorageClient):
             and CORS will be disabled for the service. For detailed information 
             about CORS rules and evaluation logic, see 
             https://msdn.microsoft.com/en-us/library/azure/dn535601.aspx.
-        :type cors: list of :class:`~azure.storage.models.CorsRule`
+        :type cors: list(:class:`~azure.storage.common.models.CorsRule`)
         :param int timeout:
             The server timeout, expressed in seconds.
         '''
@@ -404,7 +404,7 @@ class QueueService(StorageClient):
             _convert_service_properties_to_xml(logging, hour_metrics, minute_metrics, cors))
         self._perform_request(request)
 
-    def list_queues(self, prefix=None, num_results=None, include_metadata=False, 
+    def list_queues(self, prefix=None, num_results=None, include_metadata=False,
                     marker=None, timeout=None):
         '''
         Returns a generator to list the queues. The generator will lazily follow 
@@ -436,14 +436,14 @@ class QueueService(StorageClient):
         '''
         include = 'metadata' if include_metadata else None
         operation_context = _OperationContext(location_lock=True)
-        kwargs = {'prefix': prefix, 'max_results': num_results, 'include': include, 
+        kwargs = {'prefix': prefix, 'max_results': num_results, 'include': include,
                   'marker': marker, 'timeout': timeout, '_context': operation_context}
         resp = self._list_queues(**kwargs)
 
         return ListGenerator(resp, self._list_queues, (), kwargs)
 
     def _list_queues(self, prefix=None, marker=None, max_results=None,
-                    include=None, timeout=None, _context=None):
+                     include=None, timeout=None, _context=None):
         '''
         Returns a list of queues under the specified account. Makes a single list 
         request to the service. Used internally by the list_queues method.
@@ -498,7 +498,7 @@ class QueueService(StorageClient):
             A dict containing name-value pairs to associate with the queue as 
             metadata. Note that metadata names preserve the case with which they 
             were created, but are case-insensitive when set or read. 
-        :type metadata: a dict mapping str to str 
+        :type metadata: dict(str, str)
         :param bool fail_on_exist:
             Specifies whether to throw an exception if the queue already exists.
         :param int timeout:
@@ -588,7 +588,7 @@ class QueueService(StorageClient):
             A dictionary representing the queue metadata with an 
             approximate_message_count int property on the dict estimating the 
             number of messages in the queue.
-        :rtype: a dict mapping str to str
+        :rtype: dict(str, str)
         '''
         _validate_not_none('queue_name', queue_name)
         request = HTTPRequest()
@@ -656,7 +656,7 @@ class QueueService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: A dictionary of access policies associated with the queue.
-        :rtype: dict of str to :class:`~azure.storage.models.AccessPolicy`
+        :rtype: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
         '''
         _validate_not_none('queue_name', queue_name)
         request = HTTPRequest()
@@ -692,7 +692,7 @@ class QueueService(StorageClient):
             A dictionary of access policies to associate with the queue. The 
             dictionary may contain up to 5 elements. An empty dictionary 
             will clear the access policies set on the service. 
-        :type signed_identifiers: dict of str to :class:`~azure.storage.models.AccessPolicy`
+        :type signed_identifiers: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
         :param int timeout:
             The server timeout, expressed in seconds.
         '''
@@ -770,8 +770,8 @@ class QueueService(StorageClient):
                                                                     self.key_encryption_key))
 
         message_list = self._perform_request(request, _convert_xml_to_queue_messages,
-                                     [self.decode_function, False,
-                                      None, None, content])
+                                             [self.decode_function, False,
+                                              None, None, content])
         return message_list[0]
 
     def get_messages(self, queue_name, num_messages=None,
@@ -803,7 +803,7 @@ class QueueService(StorageClient):
         :param int timeout:
             The server timeout, expressed in seconds.
         :return: A :class:`~azure.storage.queue.models.QueueMessage` object representing the information passed.
-        :rtype: list of :class:`~azure.storage.queue.models.QueueMessage`
+        :rtype: list(:class:`~azure.storage.queue.models.QueueMessage`)
         '''
         _validate_decryption_required(self.require_encryption, self.key_encryption_key,
                                       self.key_resolver_function)
@@ -851,7 +851,7 @@ class QueueService(StorageClient):
             A list of :class:`~azure.storage.queue.models.QueueMessage` objects. Note that 
             time_next_visible and pop_receipt will not be populated as peek does 
             not pop the message and can only retrieve already visible messages.
-        :rtype: list of :class:`~azure.storage.queue.models.QueueMessage`
+        :rtype: list(:class:`~azure.storage.queue.models.QueueMessage`)
         '''
 
         _validate_decryption_required(self.require_encryption, self.key_encryption_key,
@@ -926,7 +926,7 @@ class QueueService(StorageClient):
         request.query = {'timeout': _int_to_str(timeout)}
         self._perform_request(request)
 
-    def update_message(self, queue_name, message_id, pop_receipt, visibility_timeout, 
+    def update_message(self, queue_name, message_id, pop_receipt, visibility_timeout,
                        content=None, timeout=None):
         '''
         Updates the visibility timeout of a message. You can also use this
@@ -964,7 +964,7 @@ class QueueService(StorageClient):
         :return: 
             A list of :class:`~azure.storage.queue.models.QueueMessage` objects. For convenience,
             this object is also populated with the content, although it is not returned by the service.
-        :rtype: list of :class:`~azure.storage.queue.models.QueueMessage`
+        :rtype: list(:class:`~azure.storage.queue.models.QueueMessage`)
         '''
 
         _validate_encryption_required(self.require_encryption, self.key_encryption_key)

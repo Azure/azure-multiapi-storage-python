@@ -1,4 +1,4 @@
-﻿#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Copyright (c) Microsoft.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,74 +11,58 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#--------------------------------------------------------------------------
-from azure.common import AzureHttpError
-from .._error import AzureException
-from .._error import (
-    _dont_fail_not_exist,
-    _dont_fail_on_exist,
-    _validate_not_none,
-    _validate_decryption_required,
-    _validate_access_policies,
-    _validate_content_match,
-    _ERROR_PARALLEL_NOT_SEEKABLE,
-    _ERROR_DECRYPTION_FAILURE,
-)
-from ._error import (
-    _ERROR_INVALID_LEASE_DURATION,
-    _ERROR_INVALID_LEASE_BREAK_PERIOD,
-)
-from .._common_conversion import (
-    _int_to_str,
-    _to_str,
-    _datetime_to_utc_string,
-    _get_content_md5,
-)
+# --------------------------------------------------------------------------
+import sys
 from abc import ABCMeta
-from .._serialization import (
-    _get_request_body,
-    _convert_signed_identifiers_to_xml,
-    _convert_service_properties_to_xml,
-    _add_metadata_headers,
-)
-from .._http import HTTPRequest
-from ._download_chunking import _download_blob_chunks
-from ..models import (
-    Services,
-    ListGenerator,
-    _OperationContext,
-)
-from .models import (
-    Blob,
-    BlobProperties,
-    _LeaseActions,
-    ContainerPermissions,
-    BlobPermissions,
-    Container,
-    ContainerProperties,
-)
-from .._auth import (
+
+from azure.common import AzureHttpError
+
+from ..common._auth import (
     _StorageSASAuthentication,
     _StorageSharedKeyAuthentication,
     _StorageNoAuthentication,
 )
-from .._connection import _ServiceParameters
-from .._constants import (
+from ..common._common_conversion import (
+    _int_to_str,
+    _to_str,
+    _datetime_to_utc_string,
+)
+from ..common._connection import _ServiceParameters
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from .._deserialization import (
+from ..common._deserialization import (
     _convert_xml_to_service_properties,
-    _get_download_size,
     _parse_metadata,
     _parse_properties,
     _convert_xml_to_service_stats,
     _parse_length_from_content_range,
 )
-from ._serialization import (
-    _get_path,
-    _validate_and_format_range_headers,
+from ..common._error import (
+    _dont_fail_not_exist,
+    _dont_fail_on_exist,
+    _validate_not_none,
+    _validate_decryption_required,
+    _validate_access_policies,
+    _ERROR_PARALLEL_NOT_SEEKABLE,
 )
+from ..common._http import HTTPRequest
+from ..common._serialization import (
+    _get_request_body,
+    _convert_signed_identifiers_to_xml,
+    _convert_service_properties_to_xml,
+    _add_metadata_headers,
+)
+from ..common.models import (
+    Services,
+    ListGenerator,
+    _OperationContext,
+)
+from ..common.sharedaccesssignature import (
+    SharedAccessSignature,
+)
+from ..common.storageclient import StorageClient
 from ._deserialization import (
     _convert_xml_to_containers,
     _parse_blob,
@@ -89,18 +73,29 @@ from ._deserialization import (
     _convert_xml_to_signed_identifiers_and_access,
     _parse_base_properties,
 )
-from ..sharedaccesssignature import (
-    SharedAccessSignature,
+from ._download_chunking import _download_blob_chunks
+from ._error import (
+    _ERROR_INVALID_LEASE_DURATION,
+    _ERROR_INVALID_LEASE_BREAK_PERIOD,
 )
-from ..storageclient import StorageClient
-import sys
+from ._serialization import (
+    _get_path,
+    _validate_and_format_range_headers,
+)
+from .models import (
+    BlobProperties,
+    _LeaseActions,
+    ContainerPermissions,
+    BlobPermissions,
+)
+
 if sys.version_info >= (3,):
     from io import BytesIO
 else:
     from cStringIO import StringIO as BytesIO
 
-class BaseBlobService(StorageClient):
 
+class BaseBlobService(StorageClient):
     '''
     This is the main class managing Blob resources.
 
@@ -110,16 +105,16 @@ class BaseBlobService(StorageClient):
     way to organize sets of blobs. For more information please see:
     https://msdn.microsoft.com/en-us/library/azure/ee691964.aspx
 
-    :ivar int MAX_SINGLE_GET_SIZE: 
-        The size of the first range get performed by get_blob_to_* methods if 
-        max_connections is greater than 1. Less data will be returned if the 
+    :ivar int MAX_SINGLE_GET_SIZE:
+        The size of the first range get performed by get_blob_to_* methods if
+        max_connections is greater than 1. Less data will be returned if the
         blob is smaller than this.
-    :ivar int MAX_CHUNK_GET_SIZE: 
-        The size of subsequent range gets performed by get_blob_to_* methods if 
-        max_connections is greater than 1 and the blob is larger than MAX_SINGLE_GET_SIZE. 
-        Less data will be returned if the remainder of the blob is smaller than 
-        this. If this is set to larger than 4MB, content_validation will throw an 
-        error if enabled. However, if content_validation is not desired a size 
+    :ivar int MAX_CHUNK_GET_SIZE:
+        The size of subsequent range gets performed by get_blob_to_* methods if
+        max_connections is greater than 1 and the blob is larger than MAX_SINGLE_GET_SIZE.
+        Less data will be returned if the remainder of the blob is smaller than
+        this. If this is set to larger than 4MB, content_validation will throw an
+        error if enabled. However, if content_validation is not desired a size
         greater than 4MB may be optimal. Setting this below 4MB is not recommended.
     :ivar object key_encryption_key:
         The key-encryption-key optionally provided by the user. If provided, will be used to
@@ -140,7 +135,7 @@ class BaseBlobService(StorageClient):
         It uses the kid string to return a key-encryption-key implementing the interface defined above.
     :ivar bool require_encryption:
         A flag that may be set to ensure that all messages successfully uploaded to the queue and all those downloaded and
-        successfully read from the queue are/were encrypted while on the server. If this flag is set, all required 
+        successfully read from the queue are/were encrypted while on the server. If this flag is set, all required
         parameters for encryption/decryption must be provided. See the above comments on the key_encryption_key and resolver.
     '''
 
@@ -148,7 +143,7 @@ class BaseBlobService(StorageClient):
     MAX_SINGLE_GET_SIZE = 32 * 1024 * 1024
     MAX_CHUNK_GET_SIZE = 4 * 1024 * 1024
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, 
+    def __init__(self, account_name=None, account_key=None, sas_token=None,
                  is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
                  custom_domain=None, request_session=None, connection_string=None, socket_timeout=None):
         '''
@@ -192,11 +187,11 @@ class BaseBlobService(StorageClient):
         '''
         service_params = _ServiceParameters.get_service_parameters(
             'blob',
-            account_name=account_name, 
+            account_name=account_name,
             account_key=account_key,
-            sas_token=sas_token, 
+            sas_token=sas_token,
             is_emulated=is_emulated,
-            protocol=protocol, 
+            protocol=protocol,
             endpoint_suffix=endpoint_suffix,
             custom_domain=custom_domain,
             request_session=request_session,
@@ -256,8 +251,8 @@ class BaseBlobService(StorageClient):
 
         return url
 
-    def generate_account_shared_access_signature(self, resource_types, permission, 
-                                        expiry, start=None, ip=None, protocol=None):
+    def generate_account_shared_access_signature(self, resource_types, permission,
+                                                 expiry, start=None, ip=None, protocol=None):
         '''
         Generates a shared access signature for the blob service.
         Use the returned signature with the sas_token parameter of any BlobService.
@@ -277,14 +272,14 @@ class BaseBlobService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
             If the IP address from which the request originates does not match the IP address
@@ -293,7 +288,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :return: A Shared Access Signature (sas) token.
         :rtype: str
         '''
@@ -301,15 +296,15 @@ class BaseBlobService(StorageClient):
         _validate_not_none('self.account_key', self.account_key)
 
         sas = SharedAccessSignature(self.account_name, self.account_key)
-        return sas.generate_account(Services.BLOB, resource_types, permission, 
+        return sas.generate_account(Services.BLOB, resource_types, permission,
                                     expiry, start=start, ip=ip, protocol=protocol)
 
-    def generate_container_shared_access_signature(self, container_name, 
-                        permission=None, expiry=None, 
-                        start=None, id=None, ip=None, protocol=None,
-                        cache_control=None, content_disposition=None,
-                        content_encoding=None, content_language=None,
-                        content_type=None):
+    def generate_container_shared_access_signature(self, container_name,
+                                                   permission=None, expiry=None,
+                                                   start=None, id=None, ip=None, protocol=None,
+                                                   cache_control=None, content_disposition=None,
+                                                   content_encoding=None, content_language=None,
+                                                   content_type=None):
         '''
         Generates a shared access signature for the container.
         Use the returned signature with the sas_token parameter of any BlobService.
@@ -330,14 +325,14 @@ class BaseBlobService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use 
@@ -350,7 +345,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -376,9 +371,9 @@ class BaseBlobService(StorageClient):
         sas = SharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_container(
             container_name,
-            permission, 
+            permission,
             expiry,
-            start=start, 
+            start=start,
             id=id,
             ip=ip,
             protocol=protocol,
@@ -390,11 +385,11 @@ class BaseBlobService(StorageClient):
         )
 
     def generate_blob_shared_access_signature(
-        self, container_name, blob_name, permission=None, 
-        expiry=None, start=None, id=None, ip=None, protocol=None,
-        cache_control=None, content_disposition=None,
-        content_encoding=None, content_language=None,
-        content_type=None):
+            self, container_name, blob_name, permission=None,
+            expiry=None, start=None, id=None, ip=None, protocol=None,
+            cache_control=None, content_disposition=None,
+            content_encoding=None, content_language=None,
+            content_type=None):
         '''
         Generates a shared access signature for the blob.
         Use the returned signature with the sas_token parameter of any BlobService.
@@ -417,14 +412,14 @@ class BaseBlobService(StorageClient):
             been specified in an associated stored access policy. Azure will always 
             convert values to UTC. If a date is passed in without timezone info, it 
             is assumed to be UTC.
-        :type expiry: datetime.datetime or str
+        :type expiry: datetime or str
         :param start:
             The time at which the shared access signature becomes valid. If 
             omitted, start time for this call is assumed to be the time when the 
             storage service receives the request. Azure will always convert values 
             to UTC. If a date is passed in without timezone info, it is assumed to 
             be UTC.
-        :type start: datetime.datetime or str
+        :type start: datetime or str
         :param str id:
             A unique value up to 64 characters in length that correlates to a 
             stored access policy. To create a stored access policy, use :func:`~set_container_acl`.
@@ -436,7 +431,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.models.Protocol` for possible values.
+            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -464,9 +459,9 @@ class BaseBlobService(StorageClient):
         return sas.generate_blob(
             container_name,
             blob_name,
-            permission, 
+            permission,
             expiry,
-            start=start, 
+            start=start,
             id=id,
             ip=ip,
             protocol=protocol,
@@ -477,7 +472,7 @@ class BaseBlobService(StorageClient):
             content_type=content_type,
         )
 
-    def list_containers(self, prefix=None, num_results=None, include_metadata=False, 
+    def list_containers(self, prefix=None, num_results=None, include_metadata=False,
                         marker=None, timeout=None):
         '''
         Returns a generator to list the containers under the specified account.
@@ -509,14 +504,13 @@ class BaseBlobService(StorageClient):
         '''
         include = 'metadata' if include_metadata else None
         operation_context = _OperationContext(location_lock=True)
-        kwargs = {'prefix': prefix, 'marker': marker, 'max_results': num_results, 
-                'include': include, 'timeout': timeout, '_context': operation_context}
+        kwargs = {'prefix': prefix, 'marker': marker, 'max_results': num_results,
+                  'include': include, 'timeout': timeout, '_context': operation_context}
         resp = self._list_containers(**kwargs)
 
         return ListGenerator(resp, self._list_containers, (), kwargs)
 
-
-    def _list_containers(self, prefix=None, marker=None, max_results=None, 
+    def _list_containers(self, prefix=None, marker=None, max_results=None,
                          include=None, timeout=None, _context=None):
         '''
         Returns a list of the containers under the specified account.
@@ -545,7 +539,7 @@ class BaseBlobService(StorageClient):
         request = HTTPRequest()
         request.method = 'GET'
         request.host_locations = self._get_host_locations(secondary=True)
-        request.path = _get_path() 
+        request.path = _get_path()
         request.query = {
             'comp': 'list',
             'prefix': _to_str(prefix),
@@ -569,11 +563,9 @@ class BaseBlobService(StorageClient):
         :param metadata:
             A dict with name_value pairs to associate with the
             container as metadata. Example:{'Category':'test'}
-        :type metadata: a dict mapping str to str
-        :param public_access:
+        :type metadata: dict(str, str)
+        :param ~azure.storage.blob.models.PublicAccess public_access:
             Possible values include: container, blob.
-        :type public_access:
-            One of the values listed in the :class:`~azure.storage.blob.models.PublicAccess` enum.
         :param bool fail_on_exist:
             Specify whether to throw an exception when the container exists.
         :param int timeout:
@@ -647,7 +639,7 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         :return:
             A dictionary representing the container metadata name, value pairs.
-        :rtype: a dict mapping str to str
+        :rtype: dict(str, str)
         '''
         _validate_not_none('container_name', container_name)
         request = HTTPRequest()
@@ -676,7 +668,7 @@ class BaseBlobService(StorageClient):
         :param metadata:
             A dict containing name-value pairs to associate with the container as 
             metadata. Example: {'category':'test'}
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param str lease_id:
             If specified, set_container_metadata only succeeds if the
             container's lease is active and matches this ID.
@@ -721,9 +713,8 @@ class BaseBlobService(StorageClient):
             container's lease is active and matches this ID.
         :param int timeout:
             The timeout parameter is expressed in seconds.
-        :return: A dictionary of access policies associated with the container.
-        :rtype:
-            dict of str to :class:`.AccessPolicy` and a public_access property
+        :return: A dictionary of access policies associated with the container. dict of str to
+            :class:`azure.storage.common.models.AccessPolicy` and a public_access property
             if public access is turned on
         '''
         _validate_not_none('container_name', container_name)
@@ -754,20 +745,24 @@ class BaseBlobService(StorageClient):
             A dictionary of access policies to associate with the container. The 
             dictionary may contain up to 5 elements. An empty dictionary 
             will clear the access policies set on the service. 
-        :type signed_identifiers: dict of str to :class:`.AccessPolicy`
-        :param public_access:
+        :type signed_identifiers: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
+        :param ~azure.storage.blob.models.PublicAccess public_access:
             Possible values include: container, blob.
-        :type public_access: 
-            One of the values listed in the :class:`~azure.storage.blob.models.PublicAccess` enum.
         :param str lease_id:
             If specified, set_container_acl only succeeds if the
             container's lease is active and matches this ID.
         :param datetime if_modified_since:
-            A DateTime value. Azure expects the date value passed in to be UTC.
+            A datetime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.
             If a date is passed in without timezone info, it is assumed to be UTC. 
             Specify this header to perform the operation only
-            if the resource has been modified since the specified time.
+            if the resource has been modified since the specified date/time.
+        :param datetime if_unmodified_since:
+            A datetime value. Azure expects the date value passed in to be UTC.
+            If timezone is included, any non-UTC datetimes will be converted to UTC.
+            If a date is passed in without timezone info, it is assumed to be UTC.
+            Specify this header to perform the operation only if
+            the resource has not been modified since the specified date/time.
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: ETag and last modified properties for the updated Container
@@ -840,7 +835,7 @@ class BaseBlobService(StorageClient):
         request.headers = {
             'x-ms-lease-id': _to_str(lease_id),
             'If-Modified-Since': _datetime_to_utc_string(if_modified_since),
-            'If-Unmodified-Since': _datetime_to_utc_string(if_unmodified_since),          
+            'If-Unmodified-Since': _datetime_to_utc_string(if_unmodified_since),
         }
 
         if not fail_not_exist:
@@ -855,9 +850,9 @@ class BaseBlobService(StorageClient):
             return True
 
     def _lease_container_impl(
-        self, container_name, lease_action, lease_id, lease_duration,
-        lease_break_period, proposed_lease_id, if_modified_since,
-        if_unmodified_since, timeout):
+            self, container_name, lease_action, lease_id, lease_duration,
+            lease_break_period, proposed_lease_id, if_modified_since,
+            if_unmodified_since, timeout):
         '''
         Establishes and manages a lease on a container.
         The Lease Container operation can be called in one of five modes
@@ -911,7 +906,7 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         :return:
             Response headers returned from the service call.
-        :rtype: a dict mapping str to str
+        :rtype: dict(str, str)
         '''
         _validate_not_none('container_name', container_name)
         _validate_not_none('lease_action', lease_action)
@@ -937,8 +932,8 @@ class BaseBlobService(StorageClient):
         return self._perform_request(request, _parse_lease)
 
     def acquire_container_lease(
-        self, container_name, lease_duration=-1, proposed_lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, timeout=None):
+            self, container_name, lease_duration=-1, proposed_lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, timeout=None):
         '''
         Requests a new lease. If the container does not have an active lease,
         the Blob service creates a lease on the container and returns a new
@@ -972,15 +967,15 @@ class BaseBlobService(StorageClient):
         :return: str
         '''
         _validate_not_none('lease_duration', lease_duration)
-        if lease_duration is not -1 and\
-           (lease_duration < 15 or lease_duration > 60):
+        if lease_duration is not -1 and \
+                (lease_duration < 15 or lease_duration > 60):
             raise ValueError(_ERROR_INVALID_LEASE_DURATION)
 
-        lease = self._lease_container_impl(container_name, 
+        lease = self._lease_container_impl(container_name,
                                            _LeaseActions.Acquire,
-                                           None, # lease_id
+                                           None,  # lease_id
                                            lease_duration,
-                                           None, # lease_break_period
+                                           None,  # lease_break_period
                                            proposed_lease_id,
                                            if_modified_since,
                                            if_unmodified_since,
@@ -988,8 +983,8 @@ class BaseBlobService(StorageClient):
         return lease['id']
 
     def renew_container_lease(
-        self, container_name, lease_id, if_modified_since=None,
-        if_unmodified_since=None, timeout=None):
+            self, container_name, lease_id, if_modified_since=None,
+            if_unmodified_since=None, timeout=None):
         '''
         Renews the lease. The lease can be renewed if the lease ID specified
         matches that associated with the container. Note that
@@ -1020,20 +1015,20 @@ class BaseBlobService(StorageClient):
         '''
         _validate_not_none('lease_id', lease_id)
 
-        lease = self._lease_container_impl(container_name, 
+        lease = self._lease_container_impl(container_name,
                                            _LeaseActions.Renew,
                                            lease_id,
-                                           None, # lease_duration
-                                           None, # lease_break_period
-                                           None, # proposed_lease_id
+                                           None,  # lease_duration
+                                           None,  # lease_break_period
+                                           None,  # proposed_lease_id
                                            if_modified_since,
                                            if_unmodified_since,
                                            timeout)
         return lease['id']
 
     def release_container_lease(
-        self, container_name, lease_id, if_modified_since=None,
-        if_unmodified_since=None, timeout=None):
+            self, container_name, lease_id, if_modified_since=None,
+            if_unmodified_since=None, timeout=None):
         '''
         Release the lease. The lease may be released if the lease_id specified matches
         that associated with the container. Releasing the lease allows another client
@@ -1060,19 +1055,19 @@ class BaseBlobService(StorageClient):
         '''
         _validate_not_none('lease_id', lease_id)
 
-        self._lease_container_impl(container_name, 
-                                    _LeaseActions.Release,
-                                    lease_id,
-                                    None, # lease_duration
-                                    None, # lease_break_period
-                                    None, # proposed_lease_id
-                                    if_modified_since,
-                                    if_unmodified_since,
-                                    timeout)
+        self._lease_container_impl(container_name,
+                                   _LeaseActions.Release,
+                                   lease_id,
+                                   None,  # lease_duration
+                                   None,  # lease_break_period
+                                   None,  # proposed_lease_id
+                                   if_modified_since,
+                                   if_unmodified_since,
+                                   timeout)
 
     def break_container_lease(
-        self, container_name, lease_break_period=None,
-        if_modified_since=None, if_unmodified_since=None, timeout=None):
+            self, container_name, lease_break_period=None,
+            if_modified_since=None, if_unmodified_since=None, timeout=None):
         '''
         Break the lease, if the container has an active lease. Once a lease is
         broken, it cannot be renewed. Any authorized request can break the lease;
@@ -1113,21 +1108,21 @@ class BaseBlobService(StorageClient):
         '''
         if (lease_break_period is not None) and (lease_break_period < 0 or lease_break_period > 60):
             raise ValueError(_ERROR_INVALID_LEASE_BREAK_PERIOD)
-        
-        lease = self._lease_container_impl(container_name, 
+
+        lease = self._lease_container_impl(container_name,
                                            _LeaseActions.Break,
-                                           None, # lease_id
-                                           None, # lease_duration
+                                           None,  # lease_id
+                                           None,  # lease_duration
                                            lease_break_period,
-                                           None, # proposed_lease_id
+                                           None,  # proposed_lease_id
                                            if_modified_since,
                                            if_unmodified_since,
                                            timeout)
         return lease['time']
 
     def change_container_lease(
-        self, container_name, lease_id, proposed_lease_id,
-        if_modified_since=None, if_unmodified_since=None, timeout=None):
+            self, container_name, lease_id, proposed_lease_id,
+            if_modified_since=None, if_unmodified_since=None, timeout=None):
         '''
         Change the lease ID of an active lease. A change must include the current
         lease ID and a new lease ID.
@@ -1156,17 +1151,17 @@ class BaseBlobService(StorageClient):
         '''
         _validate_not_none('lease_id', lease_id)
 
-        self._lease_container_impl(container_name, 
-                                    _LeaseActions.Change,
-                                    lease_id,
-                                    None, # lease_duration
-                                    None, # lease_break_period
-                                    proposed_lease_id,
-                                    if_modified_since,
-                                    if_unmodified_since,
-                                    timeout)
+        self._lease_container_impl(container_name,
+                                   _LeaseActions.Change,
+                                   lease_id,
+                                   None,  # lease_duration
+                                   None,  # lease_break_period
+                                   proposed_lease_id,
+                                   if_modified_since,
+                                   if_unmodified_since,
+                                   timeout)
 
-    def list_blobs(self, container_name, prefix=None, num_results=None, include=None, 
+    def list_blobs(self, container_name, prefix=None, num_results=None, include=None,
                    delimiter=None, marker=None, timeout=None):
         '''
         Returns a generator to list the blobs under the specified container.
@@ -1208,16 +1203,16 @@ class BaseBlobService(StorageClient):
         '''
         operation_context = _OperationContext(location_lock=True)
         args = (container_name,)
-        kwargs = {'prefix': prefix, 'marker': marker, 'max_results': num_results, 
-                'include': include, 'delimiter': delimiter, 'timeout': timeout,
-                '_context': operation_context}
+        kwargs = {'prefix': prefix, 'marker': marker, 'max_results': num_results,
+                  'include': include, 'delimiter': delimiter, 'timeout': timeout,
+                  '_context': operation_context}
         resp = self._list_blobs(*args, **kwargs)
 
         return ListGenerator(resp, self._list_blobs, args, kwargs)
 
     def _list_blobs(self, container_name, prefix=None, marker=None,
-                   max_results=None, include=None, delimiter=None, timeout=None,
-                   _context=None):
+                    max_results=None, include=None, delimiter=None, timeout=None,
+                    _context=None):
         '''
         Returns the list of blobs under the specified container.
 
@@ -1235,7 +1230,7 @@ class BaseBlobService(StorageClient):
             opaque to the client.
         :param int max_results:
             Specifies the maximum number of blobs to return,
-            including all :class:`BlobPrefix` elements. If the request does not specify
+            including all :class:`~azure.storage.blob.models.BlobPrefix` elements. If the request does not specify
             max_results or specifies a value greater than 5,000, the server will
             return up to 5,000 items. Setting max_results to a value less than
             or equal to zero results in error response code 400 (Bad Request).
@@ -1259,7 +1254,7 @@ class BaseBlobService(StorageClient):
                     should be included in the response.
         :param str delimiter:
             When the request includes this parameter, the operation
-            returns a :class:`BlobPrefix` element in the response body that acts as a
+            returns a :class:`~azure.storage.blob.models.BlobPrefix` element in the response body that acts as a
             placeholder for all blobs whose names begin with the same
             substring up to the appearance of the delimiter character. The
             delimiter may be a single character or a string.
@@ -1306,7 +1301,7 @@ class BaseBlobService(StorageClient):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: The blob service stats.
-        :rtype: :class:`~azure.storage.models.ServiceStats`
+        :rtype: :class:`~azure.storage.common.models.ServiceStats`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -1321,8 +1316,8 @@ class BaseBlobService(StorageClient):
         return self._perform_request(request, _convert_xml_to_service_stats)
 
     def set_blob_service_properties(
-        self, logging=None, hour_metrics=None, minute_metrics=None,
-        cors=None, target_version=None, timeout=None):
+            self, logging=None, hour_metrics=None, minute_metrics=None,
+            cors=None, target_version=None, timeout=None):
         '''
         Sets the properties of a storage account's Blob service, including
         Azure Storage Analytics. If an element (ex Logging) is left as None, the 
@@ -1340,7 +1335,7 @@ class BaseBlobService(StorageClient):
             You can include up to five CorsRule elements in the 
             list. If an empty list is specified, all CORS rules will be deleted, 
             and CORS will be disabled for the service.
-        :type cors: list of :class:`CorsRule`
+        :type cors: list(:class:`~azure.storage.common.models.CorsRule`)
         :param string target_version:
             Indicates the default version to use for requests if an incoming 
             request's version is not specified. 
@@ -1350,7 +1345,7 @@ class BaseBlobService(StorageClient):
         request = HTTPRequest()
         request.method = 'PUT'
         request.host_locations = self._get_host_locations()
-        request.path = _get_path() 
+        request.path = _get_path()
         request.query = {
             'restype': 'service',
             'comp': 'properties',
@@ -1370,13 +1365,13 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         :return: The blob service properties.
         :rtype:
-            :class:`~azure.storage.models.ServiceProperties` with an attached
+            :class:`~azure.storage.common.models.ServiceProperties` with an attached
             target_version property
         '''
         request = HTTPRequest()
         request.method = 'GET'
         request.host_locations = self._get_host_locations(secondary=True)
-        request.path = _get_path() 
+        request.path = _get_path()
         request.query = {
             'restype': 'service',
             'comp': 'properties',
@@ -1386,13 +1381,14 @@ class BaseBlobService(StorageClient):
         return self._perform_request(request, _convert_xml_to_service_properties)
 
     def get_blob_properties(
-        self, container_name, blob_name, snapshot=None, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, snapshot=None, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Returns all user-defined metadata, standard HTTP properties, and
         system properties for the blob. It does not return the content of the blob.
-        Returns :class:`.Blob` with :class:`.BlobProperties` and a metadata dict.
+        Returns :class:`~azure.storage.blob.models.Blob`
+        with :class:`~azure.storage.blob.models.BlobProperties` and a metadata dict.
         
         :param str container_name:
             Name of existing container.
@@ -1450,9 +1446,9 @@ class BaseBlobService(StorageClient):
         return self._perform_request(request, _parse_blob, [blob_name, snapshot])
 
     def set_blob_properties(
-        self, container_name, blob_name, content_settings=None, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, content_settings=None, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Sets system properties on the blob. If one property is set for the
         content_settings, all properties will be overriden.
@@ -1542,10 +1538,10 @@ class BaseBlobService(StorageClient):
             return False
 
     def _get_blob(
-        self, container_name, blob_name, snapshot=None, start_range=None,
-        end_range=None, validate_content=False, lease_id=None, if_modified_since=None,
-        if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None, 
-        _context=None):
+            self, container_name, blob_name, snapshot=None, start_range=None,
+            end_range=None, validate_content=False, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None, timeout=None,
+            _context=None):
         '''
         Downloads a blob's content, metadata, and properties. You can also
         call this API to read a snapshot. You can specify a range if you don't
@@ -1610,7 +1606,7 @@ class BaseBlobService(StorageClient):
                                       self.key_encryption_key,
                                       self.key_resolver_function)
 
-        start_offset, end_offset = 0,0
+        start_offset, end_offset = 0, 0
         if self.key_encryption_key is not None or self.key_resolver_function is not None:
             if start_range is not None:
                 # Align the start of the range along a 16 byte block
@@ -1652,22 +1648,22 @@ class BaseBlobService(StorageClient):
             end_range_required=False,
             check_content_md5=validate_content)
 
-        return self._perform_request(request, _parse_blob, 
+        return self._perform_request(request, _parse_blob,
                                      [blob_name, snapshot, validate_content, self.require_encryption,
                                       self.key_encryption_key, self.key_resolver_function,
                                       start_offset, end_offset],
                                      operation_context=_context)
 
     def get_blob_to_path(
-        self, container_name, blob_name, file_path, open_mode='wb',
-        snapshot=None, start_range=None, end_range=None,
-        validate_content=False, progress_callback=None,
-        max_connections=2, lease_id=None, if_modified_since=None, 
-        if_unmodified_since=None, if_match=None, if_none_match=None, 
-        timeout=None):
+            self, container_name, blob_name, file_path, open_mode='wb',
+            snapshot=None, start_range=None, end_range=None,
+            validate_content=False, progress_callback=None,
+            max_connections=2, lease_id=None, if_modified_since=None,
+            if_unmodified_since=None, if_match=None, if_none_match=None,
+            timeout=None):
         '''
         Downloads a blob to a file path, with automatic chunking and progress
-        notifications. Returns an instance of :class:`Blob` with 
+        notifications. Returns an instance of :class:`~azure.storage.blob.models.Blob` with
         properties and metadata.
 
         :param str container_name:
@@ -1708,7 +1704,7 @@ class BaseBlobService(StorageClient):
             Callback for progress with signature function(current, total) 
             where current is the number of bytes transfered so far, and total is 
             the size of the blob if known.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             If set to 2 or greater, an initial get will be done for the first 
             self.MAX_SINGLE_GET_SIZE bytes of the blob. If this is the entire blob, 
@@ -1783,15 +1779,15 @@ class BaseBlobService(StorageClient):
         return blob
 
     def get_blob_to_stream(
-        self, container_name, blob_name, stream, snapshot=None,
-        start_range=None, end_range=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None, 
-        if_modified_since=None, if_unmodified_since=None, if_match=None, 
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, stream, snapshot=None,
+            start_range=None, end_range=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
 
         '''
         Downloads a blob to a stream, with automatic chunking and progress
-        notifications. Returns an instance of :class:`Blob` with
+        notifications. Returns an instance of :class:`~azure.storage.blob.models.Blob` with
         properties and metadata.
 
         :param str container_name:
@@ -1828,7 +1824,7 @@ class BaseBlobService(StorageClient):
             Callback for progress with signature function(current, total) 
             where current is the number of bytes transfered so far, and total is 
             the size of the blob if known.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             If set to 2 or greater, an initial get will be done for the first 
             self.MAX_SINGLE_GET_SIZE bytes of the blob. If this is the entire blob, 
@@ -1898,7 +1894,7 @@ class BaseBlobService(StorageClient):
 
         # If max_connections is greater than 1, do the first get to establish the 
         # size of the blob and get the first segment of data
-        else:       
+        else:
             if sys.version_info >= (3,) and not stream.seekable():
                 raise ValueError(_ERROR_PARALLEL_NOT_SEEKABLE)
 
@@ -1976,15 +1972,15 @@ class BaseBlobService(StorageClient):
 
         # If the blob is small or single shot download was used, the download is 
         # complete at this point. If blob size is large, use parallel download.
-        if blob.properties.content_length != download_size:       
+        if blob.properties.content_length != download_size:
             # Lock on the etag. This can be overriden by the user by specifying '*'
-            if_match = if_match if if_match is not None else blob.properties.etag    
-            
+            if_match = if_match if if_match is not None else blob.properties.etag
+
             end_blob = blob_size
             if end_range:
                 # Use the end_range unless it is over the end of the blob
                 end_blob = min(blob_size, end_range + 1)
-               
+
             _download_blob_chunks(
                 self,
                 container_name,
@@ -1993,7 +1989,7 @@ class BaseBlobService(StorageClient):
                 download_size,
                 self.MAX_CHUNK_GET_SIZE,
                 first_get_size,
-                initial_request_end + 1, # start where the first download ended
+                initial_request_end + 1,  # start where the first download ended
                 end_blob,
                 stream,
                 max_connections,
@@ -2021,16 +2017,16 @@ class BaseBlobService(StorageClient):
             blob.properties.content_md5 = None
 
         return blob
-        
+
     def get_blob_to_bytes(
-        self, container_name, blob_name, snapshot=None,
-        start_range=None, end_range=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None, 
-        if_modified_since=None, if_unmodified_since=None, if_match=None, 
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, snapshot=None,
+            start_range=None, end_range=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Downloads a blob as an array of bytes, with automatic chunking and
-        progress notifications. Returns an instance of :class:`Blob` with
+        progress notifications. Returns an instance of :class:`~azure.storage.blob.models.Blob` with
         properties, metadata, and content.
 
         :param str container_name:
@@ -2065,7 +2061,7 @@ class BaseBlobService(StorageClient):
             Callback for progress with signature function(current, total) 
             where current is the number of bytes transfered so far, and total is 
             the size of the blob if known.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             If set to 2 or greater, an initial get will be done for the first 
             self.MAX_SINGLE_GET_SIZE bytes of the blob. If this is the entire blob, 
@@ -2136,14 +2132,14 @@ class BaseBlobService(StorageClient):
         return blob
 
     def get_blob_to_text(
-        self, container_name, blob_name, encoding='utf-8', snapshot=None,
-        start_range=None, end_range=None, validate_content=False,
-        progress_callback=None, max_connections=2, lease_id=None, 
-        if_modified_since=None, if_unmodified_since=None, if_match=None, 
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, encoding='utf-8', snapshot=None,
+            start_range=None, end_range=None, validate_content=False,
+            progress_callback=None, max_connections=2, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Downloads a blob as unicode text, with automatic chunking and progress
-        notifications. Returns an instance of :class:`Blob` with
+        notifications. Returns an instance of :class:`~azure.storage.blob.models.Blob` with
         properties, metadata, and content.
 
         :param str container_name:
@@ -2180,7 +2176,7 @@ class BaseBlobService(StorageClient):
             Callback for progress with signature function(current, total) 
             where current is the number of bytes transfered so far, and total is 
             the size of the blob if known.
-        :type progress_callback: callback function in format of func(current, total)
+        :type progress_callback: func(current, total)
         :param int max_connections:
             If set to 2 or greater, an initial get will be done for the first 
             self.MAX_SINGLE_GET_SIZE bytes of the blob. If this is the entire blob, 
@@ -2231,26 +2227,26 @@ class BaseBlobService(StorageClient):
         _validate_not_none('encoding', encoding)
 
         blob = self.get_blob_to_bytes(container_name,
-                                        blob_name,
-                                        snapshot,
-                                        start_range,
-                                        end_range,
-                                        validate_content,
-                                        progress_callback,
-                                        max_connections,
-                                        lease_id,
-                                        if_modified_since,
-                                        if_unmodified_since,
-                                        if_match,
-                                        if_none_match,
-                                        timeout)
+                                      blob_name,
+                                      snapshot,
+                                      start_range,
+                                      end_range,
+                                      validate_content,
+                                      progress_callback,
+                                      max_connections,
+                                      lease_id,
+                                      if_modified_since,
+                                      if_unmodified_since,
+                                      if_match,
+                                      if_none_match,
+                                      timeout)
         blob.content = blob.content.decode(encoding)
         return blob
 
     def get_blob_metadata(
-        self, container_name, blob_name, snapshot=None, lease_id=None,
-        if_modified_since=None, if_unmodified_since=None, if_match=None,
-        if_none_match=None, timeout=None):
+            self, container_name, blob_name, snapshot=None, lease_id=None,
+            if_modified_since=None, if_unmodified_since=None, if_match=None,
+            if_none_match=None, timeout=None):
         '''
         Returns all user-defined metadata for the specified blob or snapshot.
 
@@ -2288,7 +2284,7 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         :return:
             A dictionary representing the blob metadata name, value pairs.
-        :rtype: a dict mapping str to str
+        :rtype: dict(str, str)
         '''
         _validate_not_none('container_name', container_name)
         _validate_not_none('blob_name', blob_name)
@@ -2307,7 +2303,7 @@ class BaseBlobService(StorageClient):
             'If-Unmodified-Since': _datetime_to_utc_string(if_unmodified_since),
             'If-Match': _to_str(if_match),
             'If-None-Match': _to_str(if_none_match),
-        }     
+        }
 
         return self._perform_request(request, _parse_metadata)
 
@@ -2327,7 +2323,7 @@ class BaseBlobService(StorageClient):
             Dict containing name and value pairs. Each call to this operation
             replaces all existing metadata attached to the blob. To remove all
             metadata from the blob, call this operation with no metadata headers.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param str lease_id:
             Required if the blob has an active lease.
         :param datetime if_modified_since:
@@ -2445,7 +2441,7 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         :return:
             Response headers returned from the service call.
-        :rtype: a dict mapping str to str
+        :rtype: dict(str, str)
         '''
         _validate_not_none('container_name', container_name)
         _validate_not_none('blob_name', blob_name)
@@ -2524,15 +2520,15 @@ class BaseBlobService(StorageClient):
         '''
         _validate_not_none('lease_duration', lease_duration)
 
-        if lease_duration is not -1 and\
-           (lease_duration < 15 or lease_duration > 60):
+        if lease_duration is not -1 and \
+                (lease_duration < 15 or lease_duration > 60):
             raise ValueError(_ERROR_INVALID_LEASE_DURATION)
         lease = self._lease_blob_impl(container_name,
                                       blob_name,
                                       _LeaseActions.Acquire,
-                                      None, # lease_id
+                                      None,  # lease_id
                                       lease_duration,
-                                      None, # lease_break_period
+                                      None,  # lease_break_period
                                       proposed_lease_id,
                                       if_modified_since,
                                       if_unmodified_since,
@@ -2590,9 +2586,9 @@ class BaseBlobService(StorageClient):
                                       blob_name,
                                       _LeaseActions.Renew,
                                       lease_id,
-                                      None, # lease_duration
-                                      None, # lease_break_period
-                                      None, # proposed_lease_id
+                                      None,  # lease_duration
+                                      None,  # lease_break_period
+                                      None,  # proposed_lease_id
                                       if_modified_since,
                                       if_unmodified_since,
                                       if_match,
@@ -2642,17 +2638,17 @@ class BaseBlobService(StorageClient):
         _validate_not_none('lease_id', lease_id)
 
         self._lease_blob_impl(container_name,
-                                blob_name,
-                                _LeaseActions.Release,
-                                lease_id,
-                                None, # lease_duration
-                                None, # lease_break_period
-                                None, # proposed_lease_id
-                                if_modified_since,
-                                if_unmodified_since,
-                                if_match,
-                                if_none_match,
-                                timeout)
+                              blob_name,
+                              _LeaseActions.Release,
+                              lease_id,
+                              None,  # lease_duration
+                              None,  # lease_break_period
+                              None,  # proposed_lease_id
+                              if_modified_since,
+                              if_unmodified_since,
+                              if_match,
+                              if_none_match,
+                              timeout)
 
     def break_blob_lease(self, container_name, blob_name,
                          lease_break_period=None,
@@ -2717,10 +2713,10 @@ class BaseBlobService(StorageClient):
         lease = self._lease_blob_impl(container_name,
                                       blob_name,
                                       _LeaseActions.Break,
-                                      None, # lease_id
-                                      None, # lease_duration
+                                      None,  # lease_id
+                                      None,  # lease_duration
                                       lease_break_period,
-                                      None, # proposed_lease_id
+                                      None,  # proposed_lease_id
                                       if_modified_since,
                                       if_unmodified_since,
                                       if_match,
@@ -2729,12 +2725,12 @@ class BaseBlobService(StorageClient):
         return lease['time']
 
     def change_blob_lease(self, container_name, blob_name,
-                         lease_id,
-                         proposed_lease_id,
-                         if_modified_since=None,
-                         if_unmodified_since=None,
-                         if_match=None,
-                         if_none_match=None, timeout=None):
+                          lease_id,
+                          proposed_lease_id,
+                          if_modified_since=None,
+                          if_unmodified_since=None,
+                          if_match=None,
+                          if_none_match=None, timeout=None):
         '''
         Changes the lease ID of an active lease. A change must include the current
         lease ID and a new lease ID.
@@ -2773,17 +2769,17 @@ class BaseBlobService(StorageClient):
             The timeout parameter is expressed in seconds.
         '''
         self._lease_blob_impl(container_name,
-                                blob_name,
-                                _LeaseActions.Change,
-                                lease_id,
-                                None, # lease_duration
-                                None, # lease_break_period
-                                proposed_lease_id,
-                                if_modified_since,
-                                if_unmodified_since,
-                                if_match,
-                                if_none_match,
-                                timeout)
+                              blob_name,
+                              _LeaseActions.Change,
+                              lease_id,
+                              None,  # lease_duration
+                              None,  # lease_break_period
+                              proposed_lease_id,
+                              if_modified_since,
+                              if_unmodified_since,
+                              if_match,
+                              if_none_match,
+                              timeout)
 
     def snapshot_blob(self, container_name, blob_name,
                       metadata=None, if_modified_since=None,
@@ -2802,7 +2798,7 @@ class BaseBlobService(StorageClient):
             base blob metadata to the snapshot. If one or more name-value pairs
             are specified, the snapshot is created with the specified metadata,
             and metadata is not copied from the base blob.
-        :type metadata: a dict mapping str to str
+        :type metadata: dict(str, str)
         :param datetime if_modified_since:
             A DateTime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.
@@ -2913,7 +2909,7 @@ class BaseBlobService(StorageClient):
             source blob or file to the destination blob. If one or more name-value 
             pairs are specified, the destination blob is created with the specified 
             metadata, and metadata is not copied from the source blob or file. 
-        :type metadata: A dict mapping str to str.
+        :type metadata: dict(str, str)
         :param datetime source_if_modified_since:
             A DateTime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.
@@ -2980,31 +2976,31 @@ class BaseBlobService(StorageClient):
         :rtype: :class:`~azure.storage.blob.models.CopyProperties`
         '''
         return self._copy_blob(container_name, blob_name, copy_source,
-                          metadata,
-                          None,
-                          source_if_modified_since, source_if_unmodified_since,
-                          source_if_match, source_if_none_match,
-                          destination_if_modified_since,
-                          destination_if_unmodified_since,
-                          destination_if_match,
-                          destination_if_none_match,
-                          destination_lease_id,
-                          source_lease_id, timeout,
-                          False)
+                               metadata,
+                               None,
+                               source_if_modified_since, source_if_unmodified_since,
+                               source_if_match, source_if_none_match,
+                               destination_if_modified_since,
+                               destination_if_unmodified_since,
+                               destination_if_match,
+                               destination_if_none_match,
+                               destination_lease_id,
+                               source_lease_id, timeout,
+                               False)
 
     def _copy_blob(self, container_name, blob_name, copy_source,
-                  metadata=None,
-                  premium_page_blob_tier=None,
-                  source_if_modified_since=None,
-                  source_if_unmodified_since=None,
-                  source_if_match=None, source_if_none_match=None,
-                  destination_if_modified_since=None,
-                  destination_if_unmodified_since=None,
-                  destination_if_match=None,
-                  destination_if_none_match=None,
-                  destination_lease_id=None,
-                  source_lease_id=None, timeout=None,
-                  incremental_copy=False):
+                   metadata=None,
+                   premium_page_blob_tier=None,
+                   source_if_modified_since=None,
+                   source_if_unmodified_since=None,
+                   source_if_match=None, source_if_none_match=None,
+                   destination_if_modified_since=None,
+                   destination_if_unmodified_since=None,
+                   destination_if_match=None,
+                   destination_if_none_match=None,
+                   destination_lease_id=None,
+                   source_lease_id=None, timeout=None,
+                   incremental_copy=False):
         '''
         See copy_blob for more details. This helper method
         allows for standard copies as well as incremental copies which are only supported for page blobs.
@@ -3026,10 +3022,10 @@ class BaseBlobService(StorageClient):
             #     /accountName/blobName
             # - Snapshot in root container:
             #     /accountName/blobName?snapshot=<DateTime>
-            account, _, source =\
+            account, _, source = \
                 copy_source.partition('/')[2].partition('/')
             copy_source = self.protocol + '://' + \
-                self.primary_endpoint + '/' + source
+                          self.primary_endpoint + '/' + source
 
         request = HTTPRequest()
         request.method = 'PUT'
@@ -3120,10 +3116,8 @@ class BaseBlobService(StorageClient):
             when present, specifies the blob snapshot to delete.
         :param str lease_id:
             Required if the blob has an active lease.
-        :param delete_snapshots:
+        :param ~azure.storage.blob.models.DeleteSnapshot delete_snapshots:
             Required if the blob has associated snapshots.
-        :type delete_snapshots: 
-            One of the values listed in the :class:`~azure.storage.blob.models.DeleteSnapshot` enum.
         :param datetime if_modified_since:
             A DateTime value. Azure expects the date value passed in to be UTC.
             If timezone is included, any non-UTC datetimes will be converted to UTC.

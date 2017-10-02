@@ -61,5 +61,8 @@ setup(
         'cryptography',
         'python-dateutil',
         'requests',
-    ] + (['futures'] if sys.version_info < (3,0) else []),
+    ],
+    extras_require={
+        ':python_version=="2.7"': ['futures'],
+    },
 )

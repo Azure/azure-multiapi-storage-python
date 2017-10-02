@@ -15,6 +15,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 Change Log
 ----------
 
+0.1.5
++++++
+* Mark futures as optional using environment markers so pip will evaluate the dependencies late and not install futures on Python 3.
+
 0.1.4
 +++++
 * Fix for sdist (source distribution) not including azure/__init__.py.

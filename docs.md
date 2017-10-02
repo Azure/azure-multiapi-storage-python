@@ -6,23 +6,35 @@ python setup.py bdist_wheel
 ```
 
 ### Publishing
-You are now ready to publish the package to PyPI.
 
-There are many ways to publish but here is a template using Twine.
-```bash
-echo "[distutils]
-index-servers =
-    cli-pypi
+Modify the version number in `setup.py` and modify changelog in README.rst then create a pull request for the changes.
 
-[cli-pypi]
-repository: <PYPI_REPO_URL>
-username: <PYPI_REPO_USERNAME>
-password: <PYPI_REPO_PASSWORD>
-" > ~/.pypirc
+#### Release with Travis CI
 
+Once the changes have been merged to master, create a tag on GitHub for that commit.
+Follow the format of other releases in the release notes you create on GitHub.
+
+A Travis CI build will be kicked-off that will publish to PyPI.
+
+#### Release manually 
+
+Once the changes have been merged to master, continue with the rest of the release.
+
+```
+git clone https://github.com/Azure/azure-multiapi-storage-python
+cd azure-multiapi-storage-python
+python setup.py sdist bdist_wheel
+```
+
+```
 pip install twine
-# Uploads the packages in dist/ to the server referred to by cli-pypi.
-twine upload -r cli-pypi dist/*
+```
+
+```
+export TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy/
+export TWINE_USERNAME=A_USERNAME
+export TWINE_PASSWORD=A_SECRET
+twine upload dist/*
 ```
 
 ### Installing

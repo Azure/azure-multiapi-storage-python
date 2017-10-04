@@ -15,7 +15,7 @@
 from ._constants import (
     __author__,
     __version__,
-    DEFAULT_X_MS_VERSION,
+    X_MS_VERSION,
 )
 from .cloudstorageaccount import CloudStorageAccount
 from .models import (

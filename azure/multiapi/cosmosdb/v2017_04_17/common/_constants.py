@@ -15,18 +15,15 @@
 import platform
 
 __author__ = 'Microsoft Corp. <ptvshelp@microsoft.com>'
-__version__ = '0.37.0'
+__version__ = '0.37.1'
 
-# UserAgent string sample: 'Azure-Storage/0.37.0-0.38.0 (Python CPython 3.4.2; Windows 8)'
-# First version(0.37.0) is the common package, and the second version(0.38.0) is the service package
-USER_AGENT_STRING_PREFIX = 'Azure-Storage/{}-'.format(__version__)
-USER_AGENT_STRING_SUFFIX = '(Python {} {}; {} {})'.format(platform.python_implementation(),
-                                                          platform.python_version(), platform.system(),
-                                                          platform.release())
+# x-ms-version for storage service.
+X_MS_VERSION = '2017-04-17'
 
-# default values for common package, in case it is used directly
-DEFAULT_X_MS_VERSION = '2017-04-17'
-DEFAULT_USER_AGENT_STRING = '{}None {}'.format(USER_AGENT_STRING_PREFIX, USER_AGENT_STRING_SUFFIX)
+# UserAgent string sample: 'Azure-CosmosDB/0.32.0 (Python CPython 3.4.2; Windows 8)'
+USER_AGENT_STRING = 'Azure-CosmosDB/{} (Python {} {}; {} {})'.format(__version__, platform.python_implementation(),
+                                                                    platform.python_version(), platform.system(),
+                                                                    platform.release())
 
 # Live ServiceClient URLs
 SERVICE_HOST_BASE = 'core.windows.net'
@@ -35,6 +32,7 @@ DEFAULT_PROTOCOL = 'https'
 # Development ServiceClient URLs
 DEV_BLOB_HOST = '127.0.0.1:10000'
 DEV_QUEUE_HOST = '127.0.0.1:10001'
+DEV_TABLE_HOST = '127.0.0.1:10002'
 
 # Default credentials for Development Storage Service
 DEV_ACCOUNT_NAME = 'devstoreaccount1'

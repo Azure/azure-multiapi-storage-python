@@ -63,8 +63,8 @@ from ..common.models import (
     ListGenerator,
     _OperationContext,
 )
-from ..common.sharedaccesssignature import (
-    SharedAccessSignature,
+from .sharedaccesssignature import (
+    FileSharedAccessSignature,
 )
 from ..common.storageclient import StorageClient
 from ._deserialization import (
@@ -87,6 +87,11 @@ from .models import (
     FileProperties,
 )
 
+from ._constants import (
+    X_MS_VERSION,
+    __version__ as package_version,
+)
+
 if sys.version_info >= (3,):
     from io import BytesIO
 else:
@@ -102,22 +107,22 @@ class FileService(StorageClient):
 
     The Azure File service also offers a compelling alternative to traditional
     Direct Attached Storage (DAS) and Storage Area Network (SAN) solutions, which
-    are often complex and expensive to install, configure, and operate. 
+    are often complex and expensive to install, configure, and operate.
 
-    :ivar int MAX_SINGLE_GET_SIZE: 
-        The size of the first range get performed by get_file_to_* methods if 
-        max_connections is greater than 1. Less data will be returned if the 
+    :ivar int MAX_SINGLE_GET_SIZE:
+        The size of the first range get performed by get_file_to_* methods if
+        max_connections is greater than 1. Less data will be returned if the
         file is smaller than this.
-    :ivar int MAX_CHUNK_GET_SIZE: 
-        The size of subsequent range gets performed by get_file_to_* methods if 
-        max_connections is greater than 1 and the file is larger than MAX_SINGLE_GET_SIZE. 
-        Less data will be returned if the remainder of the file is smaller than 
-        this. If this is set to larger than 4MB, content_validation will throw an 
-        error if enabled. However, if content_validation is not desired a size 
+    :ivar int MAX_CHUNK_GET_SIZE:
+        The size of subsequent range gets performed by get_file_to_* methods if
+        max_connections is greater than 1 and the file is larger than MAX_SINGLE_GET_SIZE.
+        Less data will be returned if the remainder of the file is smaller than
+        this. If this is set to larger than 4MB, content_validation will throw an
+        error if enabled. However, if content_validation is not desired a size
         greater than 4MB may be optimal. Setting this below 4MB is not recommended.
-    :ivar int MAX_RANGE_SIZE: 
-        The size of the ranges put by create_file_from_* methods. Smaller ranges 
-        may be put if there is less data provided. The maximum range size the service 
+    :ivar int MAX_RANGE_SIZE:
+        The size of the ranges put by create_file_from_* methods. Smaller ranges
+        may be put if there is less data provided. The maximum range size the service
         supports is 4MB.
     '''
     MAX_SINGLE_GET_SIZE = 32 * 1024 * 1024
@@ -129,25 +134,25 @@ class FileService(StorageClient):
                  request_session=None, connection_string=None, socket_timeout=None):
         '''
         :param str account_name:
-            The storage account name. This is used to authenticate requests 
-            signed with an account key and to construct the storage endpoint. It 
+            The storage account name. This is used to authenticate requests
+            signed with an account key and to construct the storage endpoint. It
             is required unless a connection string is given.
         :param str account_key:
-            The storage account key. This is used for shared key authentication. 
+            The storage account key. This is used for shared key authentication.
         :param str sas_token:
-             A shared access signature token to use to authenticate requests 
-             instead of the account key. If account key and sas token are both 
+             A shared access signature token to use to authenticate requests
+             instead of the account key. If account key and sas token are both
              specified, account key will be used to sign.
         :param str protocol:
             The protocol to use for requests. Defaults to https.
         :param str endpoint_suffix:
-            The host base component of the url, minus the account name. Defaults 
-            to Azure (core.windows.net). Override this to use the China cloud 
+            The host base component of the url, minus the account name. Defaults
+            to Azure (core.windows.net). Override this to use the China cloud
             (core.chinacloudapi.cn).
         :param requests.Session request_session:
             The session object to use for http requests.
         :param str connection_string:
-            If specified, this will override all other parameters besides 
+            If specified, this will override all other parameters besides
             request session. See
             http://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/
             for the connection string format.
@@ -180,6 +185,8 @@ class FileService(StorageClient):
             self.authentication = _StorageSASAuthentication(self.sas_token)
         else:
             raise ValueError(_ERROR_STORAGE_MISSING_INFO)
+        self._X_MS_VERSION = X_MS_VERSION
+        self._update_user_agent_string(package_version)
 
     def make_file_url(self, share_name, directory_name, file_name,
                       protocol=None, sas_token=None):
@@ -232,24 +239,24 @@ class FileService(StorageClient):
         :param ResourceTypes resource_types:
             Specifies the resource types that are accessible with the account SAS.
         :param AccountPermissions permission:
-            The permissions associated with the shared access signature. The 
-            user is restricted to operations allowed by the permissions. 
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has been 
+            The permissions associated with the shared access signature. The
+            user is restricted to operations allowed by the permissions.
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has been
             specified in an associated stored access policy.
         :param expiry:
-            The time at which the shared access signature becomes invalid. 
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has 
+            The time at which the shared access signature becomes invalid.
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has
             been specified in an associated stored access policy. Azure will always
-            convert values to UTC. If a date is passed in without timezone info, it 
+            convert values to UTC. If a date is passed in without timezone info, it
             is assumed to be UTC.
         :type expiry: datetime or str
         :param start:
-            The time at which the shared access signature becomes valid. If 
-            omitted, start time for this call is assumed to be the time when the 
-            storage service receives the request. Azure will always convert values 
-            to UTC. If a date is passed in without timezone info, it is assumed to 
+            The time at which the shared access signature becomes valid. If
+            omitted, start time for this call is assumed to be the time when the
+            storage service receives the request. Azure will always convert values
+            to UTC. If a date is passed in without timezone info, it is assumed to
             be UTC.
         :type start: datetime or str
         :param str ip:
@@ -268,7 +275,7 @@ class FileService(StorageClient):
         _validate_not_none('self.account_name', self.account_name)
         _validate_not_none('self.account_key', self.account_key)
 
-        sas = SharedAccessSignature(self.account_name, self.account_key)
+        sas = FileSharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_account(Services.FILE, resource_types, permission,
                                     expiry, start=start, ip=ip, protocol=protocol)
 
@@ -291,29 +298,29 @@ class FileService(StorageClient):
         :param str share_name:
             Name of share.
         :param SharePermissions permission:
-            The permissions associated with the shared access signature. The 
+            The permissions associated with the shared access signature. The
             user is restricted to operations allowed by the permissions.
             Permissions must be ordered read, create, write, delete, list.
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has been 
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has been
             specified in an associated stored access policy.
         :param expiry:
-            The time at which the shared access signature becomes invalid. 
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has 
-            been specified in an associated stored access policy. Azure will always 
-            convert values to UTC. If a date is passed in without timezone info, it 
+            The time at which the shared access signature becomes invalid.
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has
+            been specified in an associated stored access policy. Azure will always
+            convert values to UTC. If a date is passed in without timezone info, it
             is assumed to be UTC.
         :type expiry: datetime or str
         :param start:
-            The time at which the shared access signature becomes valid. If 
-            omitted, start time for this call is assumed to be the time when the 
-            storage service receives the request. Azure will always convert values 
-            to UTC. If a date is passed in without timezone info, it is assumed to 
+            The time at which the shared access signature becomes valid. If
+            omitted, start time for this call is assumed to be the time when the
+            storage service receives the request. Azure will always convert values
+            to UTC. If a date is passed in without timezone info, it is assumed to
             be UTC.
         :type start: datetime or str
         :param str id:
-            A unique value up to 64 characters in length that correlates to a 
+            A unique value up to 64 characters in length that correlates to a
             stored access policy. To create a stored access policy, use :func:`~set_share_acl`.
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
@@ -347,7 +354,7 @@ class FileService(StorageClient):
         _validate_not_none('self.account_name', self.account_name)
         _validate_not_none('self.account_key', self.account_key)
 
-        sas = SharedAccessSignature(self.account_name, self.account_key)
+        sas = FileSharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_share(
             share_name,
             permission,
@@ -384,35 +391,35 @@ class FileService(StorageClient):
         :param str share_name:
             Name of share.
         :param str directory_name:
-            Name of directory. SAS tokens cannot be created for directories, so 
+            Name of directory. SAS tokens cannot be created for directories, so
             this parameter should only be present if file_name is provided.
         :param str file_name:
             Name of file.
         :param FilePermissions permission:
-            The permissions associated with the shared access signature. The 
+            The permissions associated with the shared access signature. The
             user is restricted to operations allowed by the permissions.
             Permissions must be ordered read, create, write, delete, list.
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has been 
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has been
             specified in an associated stored access policy.
         :param expiry:
-            The time at which the shared access signature becomes invalid. 
-            Required unless an id is given referencing a stored access policy 
-            which contains this field. This field must be omitted if it has 
-            been specified in an associated stored access policy. Azure will always 
-            convert values to UTC. If a date is passed in without timezone info, it 
+            The time at which the shared access signature becomes invalid.
+            Required unless an id is given referencing a stored access policy
+            which contains this field. This field must be omitted if it has
+            been specified in an associated stored access policy. Azure will always
+            convert values to UTC. If a date is passed in without timezone info, it
             is assumed to be UTC.
         :type expiry: datetime or str
         :param start:
-            The time at which the shared access signature becomes valid. If 
-            omitted, start time for this call is assumed to be the time when the 
-            storage service receives the request. Azure will always convert values 
-            to UTC. If a date is passed in without timezone info, it is assumed to 
+            The time at which the shared access signature becomes valid. If
+            omitted, start time for this call is assumed to be the time when the
+            storage service receives the request. Azure will always convert values
+            to UTC. If a date is passed in without timezone info, it is assumed to
             be UTC.
         :type start: datetime or str
         :param str id:
-            A unique value up to 64 characters in length that correlates to a 
-            stored access policy. To create a stored access policy, use 
+            A unique value up to 64 characters in length that correlates to a
+            stored access policy. To create a stored access policy, use
             set_file_service_properties.
         :param str ip:
             Specifies an IP address or a range of IP addresses from which to accept requests.
@@ -447,7 +454,7 @@ class FileService(StorageClient):
         _validate_not_none('self.account_name', self.account_name)
         _validate_not_none('self.account_key', self.account_key)
 
-        sas = SharedAccessSignature(self.account_name, self.account_key)
+        sas = FileSharedAccessSignature(self.account_name, self.account_key)
         return sas.generate_file(
             share_name,
             directory_name,
@@ -1075,11 +1082,11 @@ class FileService(StorageClient):
             The path to the directory.
         :param int timeout:
             The timeout parameter is expressed in seconds.
-        :return:
-            A dictionary representing the directory metadata name, value pairs.
         :param str snapshot:
             A string that represents the snapshot version, if applicable.
-        :rtype: a dict mapping str to str
+        :return:
+            A dictionary representing the directory metadata name, value pairs.
+        :rtype: dict(str, str)
         '''
         _validate_not_none('share_name', share_name)
         _validate_not_none('directory_name', directory_name)

@@ -26,11 +26,7 @@ from azure.common import (
 )
 
 from ._constants import (
-    DEFAULT_SOCKET_TIMEOUT,
-    DEFAULT_X_MS_VERSION,
-    DEFAULT_USER_AGENT_STRING,
-    USER_AGENT_STRING_PREFIX,
-    USER_AGENT_STRING_SUFFIX,
+    DEFAULT_SOCKET_TIMEOUT
 )
 from ._error import (
     _ERROR_DECRYPTION_FAILURE,
@@ -133,13 +129,6 @@ class StorageClient(object):
         self.request_callback = None
         self.response_callback = None
         self.retry_callback = None
-        self._X_MS_VERSION = DEFAULT_X_MS_VERSION
-        self._USER_AGENT_STRING = DEFAULT_USER_AGENT_STRING
-
-    def _update_user_agent_string(self, service_package_version):
-        self._USER_AGENT_STRING = '{}{} {}'.format(USER_AGENT_STRING_PREFIX,
-                                                   service_package_version,
-                                                   USER_AGENT_STRING_SUFFIX)
 
     @property
     def socket_timeout(self):
@@ -228,7 +217,7 @@ class StorageClient(object):
         self._apply_host(request, operation_context, retry_context)
 
         # Apply common settings to the request
-        _update_request(request, self._X_MS_VERSION, self._USER_AGENT_STRING)
+        _update_request(request)
         client_request_id_prefix = str.format("Client-Request-ID={0}", request.headers['x-ms-client-request-id'])
 
         while True:

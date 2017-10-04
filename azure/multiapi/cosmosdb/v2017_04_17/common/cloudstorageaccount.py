@@ -13,10 +13,10 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-# Note that we import BlobService/QueueService/FileService on demand
+# Note that we import TableService on demand
 # because this module is imported by azure/storage/__init__
 # ie. we don't want 'import azure.storage' to trigger an automatic import
-# of blob/queue/file packages.
+# of table package.
 
 from ._error import _validate_not_none
 from .models import (
@@ -31,7 +31,7 @@ from .sharedaccesssignature import (
 
 class CloudStorageAccount(object):
     """
-    Provides a factory for creating the blob, queue, and file services
+    Provides a factory for creating the table service
     with a common account name and account key or sas token.  Users can either 
     use the factory or can construct the appropriate service directly.
     """
@@ -57,89 +57,22 @@ class CloudStorageAccount(object):
         self.sas_token = sas_token
         self.is_emulated = is_emulated
 
-    def create_block_blob_service(self):
+    def create_table_service(self):
         '''
-        Creates a BlockBlobService object with the settings specified in the 
+        Creates a TableService object with the settings specified in the 
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.blob.blockblobservice.BlockBlobService`
+        :rtype: :class:`~azure.storage.table.tableservice.TableService`
         '''
         try:
-            from ..blob.blockblobservice import BlockBlobService
-            return BlockBlobService(self.account_name, self.account_key,
-                                    sas_token=self.sas_token,
-                                    is_emulated=self.is_emulated)
-        except ImportError:
-            raise Exception('The package azure-storage-blob is required. '
-                            + 'Please install it using "pip install azure-storage-blob"')
-
-    def create_page_blob_service(self):
-        '''
-        Creates a PageBlobService object with the settings specified in the 
-        CloudStorageAccount.
-
-        :return: A service object.
-        :rtype: :class:`~azure.storage.blob.pageblobservice.PageBlobService`
-        '''
-        try:
-            from ..blob.pageblobservice import PageBlobService
-            return PageBlobService(self.account_name, self.account_key,
-                                   sas_token=self.sas_token,
-                                   is_emulated=self.is_emulated)
-        except ImportError:
-            raise Exception('The package azure-storage-blob is required. '
-                            + 'Please install it using "pip install azure-storage-blob"')
-
-    def create_append_blob_service(self):
-        '''
-        Creates a AppendBlobService object with the settings specified in the 
-        CloudStorageAccount.
-
-        :return: A service object.
-        :rtype: :class:`~azure.storage.blob.appendblobservice.AppendBlobService`
-        '''
-        try:
-            from ..blob.appendblobservice import AppendBlobService
-            return AppendBlobService(self.account_name, self.account_key,
-                                     sas_token=self.sas_token,
-                                     is_emulated=self.is_emulated)
-        except ImportError:
-            raise Exception('The package azure-storage-blob is required. '
-                            + 'Please install it using "pip install azure-storage-blob"')
-
-    def create_queue_service(self):
-        '''
-        Creates a QueueService object with the settings specified in the 
-        CloudStorageAccount.
-
-        :return: A service object.
-        :rtype: :class:`~azure.storage.queue.queueservice.QueueService`
-        '''
-        try:
-            from ..queue.queueservice import QueueService
-            return QueueService(self.account_name, self.account_key,
+            from ..table.tableservice import TableService
+            return TableService(self.account_name, self.account_key,
                                 sas_token=self.sas_token,
                                 is_emulated=self.is_emulated)
         except ImportError:
-            raise Exception('The package azure-storage-queue is required. '
-                            + 'Please install it using "pip install azure-storage-queue"')
-
-    def create_file_service(self):
-        '''
-        Creates a FileService object with the settings specified in the 
-        CloudStorageAccount.
-
-        :return: A service object.
-        :rtype: :class:`~azure.storage.file.fileservice.FileService`
-        '''
-        try:
-            from ..file.fileservice import FileService
-            return FileService(self.account_name, self.account_key,
-                               sas_token=self.sas_token)
-        except ImportError:
-            raise Exception('The package azure-storage-file is required. '
-                            + 'Please install it using "pip install azure-storage-file"')
+            raise Exception('The package azure-storage-table is required. '
+                            + 'Please install it using "pip install azure-storage-table"')
 
     def generate_shared_access_signature(self, services, resource_types,
                                          permission, expiry, start=None,

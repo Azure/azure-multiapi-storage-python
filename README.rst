@@ -11,9 +11,15 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 - The official Azure Storage SDK is at https://github.com/Azure/azure-storage-python.
 
+- The official Azure CosmosDB Table SDK is at https://github.com/Azure/azure-cosmosdb-python/tree/master/azure-cosmosdb-table.
+
 
 Change Log
 ----------
+
+0.1.6
++++++
+* Integrate the latest Python Storage SDK as well as the CosmosDB table SDK
 
 0.1.5
 +++++

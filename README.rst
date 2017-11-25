@@ -17,6 +17,11 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 Change Log
 ----------
 
+0.1.7
++++++
+* Upgrade:
+    - 2017-04-17 (from 0.37.0 to 0.37.1)
+
 0.1.6
 +++++
 * Integrate the latest Python Storage SDK as well as the CosmosDB table SDK

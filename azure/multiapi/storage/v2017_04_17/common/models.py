@@ -507,6 +507,7 @@ class Services(object):
         self.blob = blob or ('b' in _str)
         self.queue = queue or ('q' in _str)
         self.file = file or ('f' in _str)
+        self.table = ('t' in _str)
 
     def __or__(self, other):
         return Services(_str=str(self) + str(other))
@@ -516,6 +517,7 @@ class Services(object):
 
     def __str__(self):
         return (('b' if self.blob else '') +
+                ('t' if self.table else '') +
                 ('q' if self.queue else '') +
                 ('f' if self.file else ''))
 

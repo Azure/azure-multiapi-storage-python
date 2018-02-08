@@ -18,6 +18,7 @@ ver=${ver//-/_}
 
 src_root=$(cd venv/lib/$(ls venv/lib); pwd)/site-packages/azure/storage
 tgt=../azure/multiapi/storage/v$ver
+mkdir -p $tgt
 
 for service in blob file queue common; do
     src=$src_root/$service

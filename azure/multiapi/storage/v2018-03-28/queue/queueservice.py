@@ -8,25 +8,25 @@ from azure.common import (
     AzureHttpError,
 )
 
-from azure.storage.common._auth import (
+from ..common._auth import (
     _StorageSASAuthentication,
     _StorageSharedKeyAuthentication,
 )
-from azure.storage.common._common_conversion import (
+from ..common._common_conversion import (
     _int_to_str,
     _to_str,
 )
-from azure.storage.common._connection import _ServiceParameters
-from azure.storage.common._constants import (
+from ..common._connection import _ServiceParameters
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from azure.storage.common._deserialization import (
+from ..common._deserialization import (
     _convert_xml_to_service_properties,
     _convert_xml_to_signed_identifiers,
     _convert_xml_to_service_stats,
 )
-from azure.storage.common._error import (
+from ..common._error import (
     _dont_fail_not_exist,
     _dont_fail_on_exist,
     _validate_not_none,
@@ -36,18 +36,18 @@ from azure.storage.common._error import (
     _validate_encryption_required,
     _validate_decryption_required,
 )
-from azure.storage.common._http import (
+from ..common._http import (
     HTTPRequest,
 )
-from azure.storage.common._serialization import (
+from ..common._serialization import (
     _convert_signed_identifiers_to_xml,
     _convert_service_properties_to_xml,
 )
-from azure.storage.common._serialization import (
+from ..common._serialization import (
     _get_request_body,
     _add_metadata_headers,
 )
-from azure.storage.common.models import (
+from ..common.models import (
     Services,
     ListGenerator,
     _OperationContext,
@@ -55,7 +55,7 @@ from azure.storage.common.models import (
 from .sharedaccesssignature import (
     QueueSharedAccessSignature,
 )
-from azure.storage.common.storageclient import StorageClient
+from ..common.storageclient import StorageClient
 from ._deserialization import (
     _convert_xml_to_queues,
     _convert_xml_to_queue_messages,

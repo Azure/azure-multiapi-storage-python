@@ -4,11 +4,11 @@
 # license information.
 # --------------------------------------------------------------------------
 
-from azure.storage.common.sharedaccesssignature import (
+from ..common.sharedaccesssignature import (
     SharedAccessSignature,
     _SharedAccessHelper,
 )
-from azure.storage.common._common_conversion import (
+from ..common._common_conversion import (
     _to_str,
 )
 from ._constants import X_MS_VERSION

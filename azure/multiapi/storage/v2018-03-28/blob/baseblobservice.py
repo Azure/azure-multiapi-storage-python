@@ -8,29 +8,29 @@ from abc import ABCMeta
 
 from azure.common import AzureHttpError
 
-from azure.storage.common._auth import (
+from ..common._auth import (
     _StorageSASAuthentication,
     _StorageSharedKeyAuthentication,
     _StorageNoAuthentication,
 )
-from azure.storage.common._common_conversion import (
+from ..common._common_conversion import (
     _int_to_str,
     _to_str,
     _datetime_to_utc_string,
 )
-from azure.storage.common._connection import _ServiceParameters
-from azure.storage.common._constants import (
+from ..common._connection import _ServiceParameters
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from azure.storage.common._deserialization import (
+from ..common._deserialization import (
     _convert_xml_to_service_properties,
     _parse_metadata,
     _parse_properties,
     _convert_xml_to_service_stats,
     _parse_length_from_content_range,
 )
-from azure.storage.common._error import (
+from ..common._error import (
     _dont_fail_not_exist,
     _dont_fail_on_exist,
     _validate_not_none,
@@ -38,14 +38,14 @@ from azure.storage.common._error import (
     _validate_access_policies,
     _ERROR_PARALLEL_NOT_SEEKABLE,
 )
-from azure.storage.common._http import HTTPRequest
-from azure.storage.common._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_request_body,
     _convert_signed_identifiers_to_xml,
     _convert_service_properties_to_xml,
     _add_metadata_headers,
 )
-from azure.storage.common.models import (
+from ..common.models import (
     Services,
     ListGenerator,
     _OperationContext,
@@ -53,7 +53,7 @@ from azure.storage.common.models import (
 from .sharedaccesssignature import (
     BlobSharedAccessSignature,
 )
-from azure.storage.common.storageclient import StorageClient
+from ..common.storageclient import StorageClient
 from ._deserialization import (
     _convert_xml_to_containers,
     _parse_blob,

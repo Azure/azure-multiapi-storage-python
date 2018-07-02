@@ -6,25 +6,25 @@
 import sys
 from os import path
 
-from azure.storage.common._common_conversion import (
+from ..common._common_conversion import (
     _int_to_str,
     _to_str,
     _datetime_to_utc_string,
     _get_content_md5,
 )
-from azure.storage.common._constants import (
+from ..common._constants import (
     SERVICE_HOST_BASE,
     DEFAULT_PROTOCOL,
 )
-from azure.storage.common._error import (
+from ..common._error import (
     _validate_not_none,
     _validate_type_bytes,
     _validate_encryption_required,
     _validate_encryption_unsupported,
     _ERROR_VALUE_NEGATIVE,
 )
-from azure.storage.common._http import HTTPRequest
-from azure.storage.common._serialization import (
+from ..common._http import HTTPRequest
+from ..common._serialization import (
     _get_data_bytes_only,
     _add_metadata_headers,
 )

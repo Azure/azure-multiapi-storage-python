@@ -4,7 +4,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-from azure.storage.common.sharedaccesssignature import (
+from ..common.sharedaccesssignature import (
     SharedAccessSignature,
     _SharedAccessHelper,
 )

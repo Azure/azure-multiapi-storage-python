@@ -9,13 +9,13 @@
 # ie. we don't want 'import azure.storage' to trigger an automatic import
 # of blob/queue/file packages.
 
-from azure.storage.common._error import _validate_not_none
-from azure.storage.common.models import (
+from ._error import _validate_not_none
+from .models import (
     ResourceTypes,
     Services,
     AccountPermissions,
 )
-from azure.storage.common.sharedaccesssignature import (
+from .sharedaccesssignature import (
     SharedAccessSignature,
 )
 
@@ -57,7 +57,7 @@ class CloudStorageAccount(object):
         :rtype: :class:`~azure.storage.blob.blockblobservice.BlockBlobService`
         '''
         try:
-            from azure.storage.blob.blockblobservice import BlockBlobService
+            from ..blob.blockblobservice import BlockBlobService
             return BlockBlobService(self.account_name, self.account_key,
                                     sas_token=self.sas_token,
                                     is_emulated=self.is_emulated)
@@ -74,7 +74,7 @@ class CloudStorageAccount(object):
         :rtype: :class:`~azure.storage.blob.pageblobservice.PageBlobService`
         '''
         try:
-            from azure.storage.blob.pageblobservice import PageBlobService
+            from ..blob.pageblobservice import PageBlobService
             return PageBlobService(self.account_name, self.account_key,
                                    sas_token=self.sas_token,
                                    is_emulated=self.is_emulated)
@@ -91,7 +91,7 @@ class CloudStorageAccount(object):
         :rtype: :class:`~azure.storage.blob.appendblobservice.AppendBlobService`
         '''
         try:
-            from azure.storage.blob.appendblobservice import AppendBlobService
+            from ..blob.appendblobservice import AppendBlobService
             return AppendBlobService(self.account_name, self.account_key,
                                      sas_token=self.sas_token,
                                      is_emulated=self.is_emulated)
@@ -108,7 +108,7 @@ class CloudStorageAccount(object):
         :rtype: :class:`~azure.storage.queue.queueservice.QueueService`
         '''
         try:
-            from azure.storage.queue.queueservice import QueueService
+            from ..queue.queueservice import QueueService
             return QueueService(self.account_name, self.account_key,
                                 sas_token=self.sas_token,
                                 is_emulated=self.is_emulated)
@@ -125,7 +125,7 @@ class CloudStorageAccount(object):
         :rtype: :class:`~azure.storage.file.fileservice.FileService`
         '''
         try:
-            from azure.storage.file.fileservice import FileService
+            from ..file.fileservice import FileService
             return FileService(self.account_name, self.account_key,
                                sas_token=self.sas_token)
         except ImportError:

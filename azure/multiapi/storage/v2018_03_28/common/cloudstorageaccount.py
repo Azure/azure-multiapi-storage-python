@@ -54,7 +54,7 @@ class CloudStorageAccount(object):
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.blob.blockblobservice.BlockBlobService`
+        :rtype: :class:`~..blob.blockblobservice.BlockBlobService`
         '''
         try:
             from ..blob.blockblobservice import BlockBlobService
@@ -71,7 +71,7 @@ class CloudStorageAccount(object):
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.blob.pageblobservice.PageBlobService`
+        :rtype: :class:`~..blob.pageblobservice.PageBlobService`
         '''
         try:
             from ..blob.pageblobservice import PageBlobService
@@ -88,7 +88,7 @@ class CloudStorageAccount(object):
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.blob.appendblobservice.AppendBlobService`
+        :rtype: :class:`~..blob.appendblobservice.AppendBlobService`
         '''
         try:
             from ..blob.appendblobservice import AppendBlobService
@@ -105,7 +105,7 @@ class CloudStorageAccount(object):
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.queue.queueservice.QueueService`
+        :rtype: :class:`~..queue.queueservice.QueueService`
         '''
         try:
             from ..queue.queueservice import QueueService
@@ -122,7 +122,7 @@ class CloudStorageAccount(object):
         CloudStorageAccount.
 
         :return: A service object.
-        :rtype: :class:`~azure.storage.file.fileservice.FileService`
+        :rtype: :class:`~..file.fileservice.FileService`
         '''
         try:
             from ..file.fileservice import FileService

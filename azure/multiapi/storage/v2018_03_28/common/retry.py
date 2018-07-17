@@ -39,7 +39,7 @@ class _Retry(object):
         '''
         A function which determines whether or not to retry.
 
-        :param ~azure.storage.models.RetryContext context: 
+        :param ~..models.RetryContext context: 
             The retry context. This contains the request, response, and other data 
             which can be used to determine whether or not to retry.
         :return: 
@@ -95,7 +95,7 @@ class _Retry(object):
         '''
         A function which sets the next host location on the request, if applicable. 
 
-        :param ~azure.storage.models.RetryContext context: 
+        :param ~..models.RetryContext context: 
             The retry context containing the previous host location and the request 
             to evaluate and possibly modify.
         '''
@@ -124,7 +124,7 @@ class _Retry(object):
         '''
         A function which determines whether and how to retry.
 
-        :param ~azure.storage.models.RetryContext context: 
+        :param ~..models.RetryContext context: 
             The retry context. This contains the request, response, and other data 
             which can be used to determine whether or not to retry.
         :param function() backoff:
@@ -205,7 +205,7 @@ class ExponentialRetry(_Retry):
     '''
     A function which determines whether and how to retry.
 
-    :param ~azure.storage.models.RetryContext context: 
+    :param ~..models.RetryContext context: 
         The retry context. This contains the request, response, and other data 
         which can be used to determine whether or not to retry.
     :return: 
@@ -263,7 +263,7 @@ class LinearRetry(_Retry):
     '''
     A function which determines whether and how to retry.
 
-    :param ~azure.storage.models.RetryContext context: 
+    :param ~..models.RetryContext context: 
         The retry context. This contains the request, response, and other data 
         which can be used to determine whether or not to retry.
     :return: 
@@ -297,7 +297,7 @@ def no_retry(context):
     '''
     Specifies never to retry.
 
-    :param ~azure.storage.models.RetryContext context: 
+    :param ~..models.RetryContext context: 
         The retry context.
     :return: 
         Always returns None to indicate never to retry.

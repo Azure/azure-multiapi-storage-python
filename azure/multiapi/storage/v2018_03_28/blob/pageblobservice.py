@@ -122,7 +122,7 @@ class PageBlobService(BaseBlobService):
         :param token_credential:
             A token credential used to authenticate HTTPS requests. The token value
             should be updated before its expiration.
-        :type `~azure.storage.common.TokenCredential`
+        :type `~..common.TokenCredential`
         '''
         self.blob_type = _BlobTypes.PageBlob
         super(PageBlobService, self).__init__(

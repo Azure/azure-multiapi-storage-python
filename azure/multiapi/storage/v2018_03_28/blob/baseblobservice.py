@@ -188,7 +188,7 @@ class BaseBlobService(StorageClient):
         :param token_credential:
             A token credential used to authenticate HTTPS requests. The token value
             should be updated before its expiration.
-        :type `~azure.storage.common.TokenCredential`
+        :type `~..common.TokenCredential`
         '''
         service_params = _ServiceParameters.get_service_parameters(
             'blob',
@@ -326,7 +326,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
+            is https,http. See :class:`~..common.models.Protocol` for possible values.
         :return: A Shared Access Signature (sas) token.
         :rtype: str
         '''
@@ -383,7 +383,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
+            is https,http. See :class:`~..common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -469,7 +469,7 @@ class BaseBlobService(StorageClient):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
+            is https,http. See :class:`~..common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -752,7 +752,7 @@ class BaseBlobService(StorageClient):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: A dictionary of access policies associated with the container. dict of str to
-            :class:`azure.storage.common.models.AccessPolicy` and a public_access property
+            :class:`..common.models.AccessPolicy` and a public_access property
             if public access is turned on
         '''
         _validate_not_none('container_name', container_name)
@@ -783,7 +783,7 @@ class BaseBlobService(StorageClient):
             A dictionary of access policies to associate with the container. The 
             dictionary may contain up to 5 elements. An empty dictionary 
             will clear the access policies set on the service. 
-        :type signed_identifiers: dict(str, :class:`~azure.storage.common.models.AccessPolicy`)
+        :type signed_identifiers: dict(str, :class:`~..common.models.AccessPolicy`)
         :param ~azure.storage.blob.models.PublicAccess public_access:
             Possible values include: container, blob.
         :param str lease_id:
@@ -1370,7 +1370,7 @@ class BaseBlobService(StorageClient):
         :param int timeout:
             The timeout parameter is expressed in seconds.
         :return: The blob service stats.
-        :rtype: :class:`~azure.storage.common.models.ServiceStats`
+        :rtype: :class:`~..common.models.ServiceStats`
         '''
         request = HTTPRequest()
         request.method = 'GET'
@@ -1395,22 +1395,22 @@ class BaseBlobService(StorageClient):
         :param logging:
             Groups the Azure Analytics Logging settings.
         :type logging:
-            :class:`~azure.storage.common.models.Logging`
+            :class:`~..common.models.Logging`
         :param hour_metrics:
             The hour metrics settings provide a summary of request 
             statistics grouped by API in hourly aggregates for blobs.
         :type hour_metrics:
-            :class:`~azure.storage.common.models.Metrics`
+            :class:`~..common.models.Metrics`
         :param minute_metrics:
             The minute metrics settings provide request statistics 
             for each minute for blobs.
         :type minute_metrics:
-            :class:`~azure.storage.common.models.Metrics`
+            :class:`~..common.models.Metrics`
         :param cors:
             You can include up to five CorsRule elements in the 
             list. If an empty list is specified, all CORS rules will be deleted, 
             and CORS will be disabled for the service.
-        :type cors: list(:class:`~azure.storage.common.models.CorsRule`)
+        :type cors: list(:class:`~..common.models.CorsRule`)
         :param str target_version:
             Indicates the default version to use for requests if an incoming 
             request's version is not specified. 
@@ -1420,12 +1420,12 @@ class BaseBlobService(StorageClient):
             The delete retention policy specifies whether to retain deleted blobs.
             It also specifies the number of days and versions of blob to keep.
         :type delete_retention_policy:
-            :class:`~azure.storage.common.models.DeleteRetentionPolicy`
+            :class:`~..common.models.DeleteRetentionPolicy`
         :param static_website:
             Specifies whether the static website feature is enabled,
             and if yes, indicates the index document and 404 error document to use.
         :type static_website:
-            :class:`~azure.storage.common.models.StaticWebsite`
+            :class:`~..common.models.StaticWebsite`
         '''
         request = HTTPRequest()
         request.method = 'PUT'
@@ -1449,7 +1449,7 @@ class BaseBlobService(StorageClient):
 
         :param int timeout:
             The timeout parameter is expressed in seconds.
-        :return: The blob :class:`~azure.storage.common.models.ServiceProperties` with an attached
+        :return: The blob :class:`~..common.models.ServiceProperties` with an attached
             target_version property.
         '''
         request = HTTPRequest()
@@ -1972,50 +1972,63 @@ class BaseBlobService(StorageClient):
         if end_range is not None:
             _validate_not_none("start_range", start_range)
 
-        # If the user explicitly sets max_connections to 1, do a single shot download
-        if max_connections == 1:
+        # the stream must be seekable if parallel download is required
+        if max_connections > 1:
+            if sys.version_info >= (3,) and not stream.seekable():
+                raise ValueError(_ERROR_PARALLEL_NOT_SEEKABLE)
+            else:
+                try:
+                    stream.seek(stream.tell())
+                except (NotImplementedError, AttributeError):
+                    raise ValueError(_ERROR_PARALLEL_NOT_SEEKABLE)
+
+        # The service only provides transactional MD5s for chunks under 4MB.
+        # If validate_content is on, get only self.MAX_CHUNK_GET_SIZE for the first
+        # chunk so a transactional MD5 can be retrieved.
+        first_get_size = self.MAX_SINGLE_GET_SIZE if not validate_content else self.MAX_CHUNK_GET_SIZE
+
+        initial_request_start = start_range if start_range is not None else 0
+
+        if end_range is not None and end_range - start_range < first_get_size:
+            initial_request_end = end_range
+        else:
+            initial_request_end = initial_request_start + first_get_size - 1
+
+        # Send a context object to make sure we always retry to the initial location
+        operation_context = _OperationContext(location_lock=True)
+        try:
             blob = self._get_blob(container_name,
                                   blob_name,
                                   snapshot,
-                                  start_range=start_range,
-                                  end_range=end_range,
+                                  start_range=initial_request_start,
+                                  end_range=initial_request_end,
                                   validate_content=validate_content,
                                   lease_id=lease_id,
                                   if_modified_since=if_modified_since,
                                   if_unmodified_since=if_unmodified_since,
                                   if_match=if_match,
                                   if_none_match=if_none_match,
-                                  timeout=timeout)
+                                  timeout=timeout,
+                                  _context=operation_context)
 
-            # Set the download size
-            download_size = blob.properties.content_length
-
-        # If max_connections is greater than 1, do the first get to establish the 
-        # size of the blob and get the first segment of data
-        else:
-            if sys.version_info >= (3,) and not stream.seekable():
-                raise ValueError(_ERROR_PARALLEL_NOT_SEEKABLE)
-
-            # The service only provides transactional MD5s for chunks under 4MB.           
-            # If validate_content is on, get only self.MAX_CHUNK_GET_SIZE for the first 
-            # chunk so a transactional MD5 can be retrieved.
-            first_get_size = self.MAX_SINGLE_GET_SIZE if not validate_content else self.MAX_CHUNK_GET_SIZE
-
-            initial_request_start = start_range if start_range is not None else 0
-
-            if end_range is not None and end_range - start_range < first_get_size:
-                initial_request_end = end_range
+            # Parse the total blob size and adjust the download size if ranges
+            # were specified
+            blob_size = _parse_length_from_content_range(blob.properties.content_range)
+            if end_range is not None:
+                # Use the end_range unless it is over the end of the blob
+                download_size = min(blob_size, end_range - start_range + 1)
+            elif start_range is not None:
+                download_size = blob_size - start_range
             else:
-                initial_request_end = initial_request_start + first_get_size - 1
-
-            # Send a context object to make sure we always retry to the initial location
-            operation_context = _OperationContext(location_lock=True)
-            try:
+                download_size = blob_size
+        except AzureHttpError as ex:
+            if start_range is None and ex.status_code == 416:
+                # Get range will fail on an empty blob. If the user did not
+                # request a range, do a regular get request in order to get
+                # any properties.
                 blob = self._get_blob(container_name,
                                       blob_name,
                                       snapshot,
-                                      start_range=initial_request_start,
-                                      end_range=initial_request_end,
                                       validate_content=validate_content,
                                       lease_id=lease_id,
                                       if_modified_since=if_modified_since,
@@ -2025,51 +2038,24 @@ class BaseBlobService(StorageClient):
                                       timeout=timeout,
                                       _context=operation_context)
 
-                # Parse the total blob size and adjust the download size if ranges 
-                # were specified
-                blob_size = _parse_length_from_content_range(blob.properties.content_range)
-                if end_range is not None:
-                    # Use the end_range unless it is over the end of the blob
-                    download_size = min(blob_size, end_range - start_range + 1)
-                elif start_range is not None:
-                    download_size = blob_size - start_range
-                else:
-                    download_size = blob_size
-            except AzureHttpError as ex:
-                if start_range is None and ex.status_code == 416:
-                    # Get range will fail on an empty blob. If the user did not 
-                    # request a range, do a regular get request in order to get 
-                    # any properties.
-                    blob = self._get_blob(container_name,
-                                          blob_name,
-                                          snapshot,
-                                          validate_content=validate_content,
-                                          lease_id=lease_id,
-                                          if_modified_since=if_modified_since,
-                                          if_unmodified_since=if_unmodified_since,
-                                          if_match=if_match,
-                                          if_none_match=if_none_match,
-                                          timeout=timeout,
-                                          _context=operation_context)
+                # Set the download size to empty
+                download_size = 0
+            else:
+                raise ex
 
-                    # Set the download size to empty
-                    download_size = 0
-                else:
-                    raise ex
-
-        # Mark the first progress chunk. If the blob is small or this is a single 
+        # Mark the first progress chunk. If the blob is small or this is a single
         # shot download, this is the only call
         if progress_callback:
             progress_callback(blob.properties.content_length, download_size)
 
-        # Write the content to the user stream  
-        # Clear blob content since output has been written to user stream   
+        # Write the content to the user stream
+        # Clear blob content since output has been written to user stream
         if blob.content is not None:
             stream.write(blob.content)
             blob.content = None
 
-        # If the blob is small or single shot download was used, the download is 
-        # complete at this point. If blob size is large, use parallel download.
+        # If the blob is small, the download is complete at this point.
+        # If blob size is large, download the rest of the blob in chunks.
         if blob.properties.content_length != download_size:
             # Lock on the etag. This can be overriden by the user by specifying '*'
             if_match = if_match if if_match is not None else blob.properties.etag
@@ -2102,14 +2088,14 @@ class BaseBlobService(StorageClient):
                 operation_context
             )
 
-            # Set the content length to the download size instead of the size of 
+            # Set the content length to the download size instead of the size of
             # the last range
             blob.properties.content_length = download_size
 
             # Overwrite the content range to the user requested range
             blob.properties.content_range = 'bytes {0}-{1}/{2}'.format(start_range, end_range, blob_size)
 
-            # Overwrite the content MD5 as it is the MD5 for the last range instead 
+            # Overwrite the content MD5 as it is the MD5 for the last range instead
             # of the stored MD5
             # TODO: Set to the stored MD5 when the service returns this
             blob.properties.content_md5 = None

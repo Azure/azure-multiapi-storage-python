@@ -81,7 +81,7 @@ class FileSharedAccessSignature(SharedAccessSignature):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
+            is https,http. See :class:`~..common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.
@@ -159,7 +159,7 @@ class FileSharedAccessSignature(SharedAccessSignature):
             restricts the request to those IP addresses.
         :param str protocol:
             Specifies the protocol permitted for a request made. The default value
-            is https,http. See :class:`~azure.storage.common.models.Protocol` for possible values.
+            is https,http. See :class:`~..common.models.Protocol` for possible values.
         :param str cache_control:
             Response header value for Cache-Control when resource is accessed
             using this shared access signature.

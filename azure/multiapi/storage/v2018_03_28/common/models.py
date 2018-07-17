@@ -111,9 +111,9 @@ class RetryContext(object):
     whether and how to retry. This context is stored across retries and may be 
     used to store other information relevant to the retry strategy.
 
-    :ivar ~azure.storage.common._http.HTTPRequest request:
+    :ivar ~._http.HTTPRequest request:
         The request sent to the storage service.
-    :ivar ~azure.storage.common._http.HTTPResponse response:
+    :ivar ~._http.HTTPResponse response:
         The response returned by the storage service.
     :ivar LocationMode location_mode:
         The location the request was sent to.

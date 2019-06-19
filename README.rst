@@ -18,6 +18,11 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 Change Log
 ----------
 
+0.2.4
++++++
+* Add new API version support:
+    - 2018-11-09
+
 0.2.3
 +++++
 * Add new API version support:

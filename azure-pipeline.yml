@@ -31,5 +31,8 @@ jobs:
         displayName: 'Use Python $(python.version)'
         inputs:
           versionSpec: '$(python.version)'
-      - bash: pip install -e
+      - bash: |
+          set -ev
+
+          pip install -e .
         displayName: Install from Source

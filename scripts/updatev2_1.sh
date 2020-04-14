@@ -22,7 +22,7 @@ for service in blob fileshare filedatalake queue; do
     ver=${ver%\"}
     ver=${ver//-/_}
 
-    tgt=azure/multiapi/storagev2/$service/v$ver
+    tgt=../azure/multiapi/storagev2/$service/v$ver
     mkdir -p $tgt
     src=$src_root/$service
     cp -R $src $tgt

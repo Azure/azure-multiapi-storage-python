@@ -61,6 +61,7 @@ setup(
         'cryptography',
         'python-dateutil',
         'requests',
+	'azure-core',
     ],
     extras_require={
         ':python_version=="2.7"': ['futures'],

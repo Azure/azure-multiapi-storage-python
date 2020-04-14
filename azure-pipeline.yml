@@ -1,16 +1,16 @@
 resources:
   - repo: self
 
-  trigger:
-    batch: true
-    branches:
-      include:
+trigger:
+  batch: true
+  branches:
+    include:
       - '*'
 
-  pr:
-    branches:
+pr:
+  branches:
     include:
-        - '*'
+      - '*'
 
 jobs:
   - job: TestInstall

@@ -1,0 +1,75 @@
+resources:
+  - repo: self
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - '*'
+
+pr:
+  branches:
+    include:
+      - '*'
+
+jobs:
+  - job: TestInstall
+    timeoutInMinutes: 10
+
+    pool:
+      vmImage: 'ubuntu-16.04'
+    strategy:
+      matrix:
+        Python27:
+          python.version: '2.7'
+        Python35:
+          python.version: '3.5'
+        Python36:
+          python.version: '3.6'
+    steps:
+      - task: UsePythonVersion@0
+        displayName: 'Use Python $(python.version)'
+        inputs:
+          versionSpec: '$(python.version)'
+      - bash: |
+          set -ev
+
+          pip install -e .
+        displayName: Install from Source
+
+  - job: BuildPythonWheel
+    condition: succeeded()
+    pool:
+      image: 'ubuntu-16.04'
+    steps:
+      - task: UsePythonVersion@0
+        displayName: Use Python 3.6
+        inputs:
+          versionSpec: 3.6
+      - bash: |
+          set -ev
+
+          : "${BUILD_STAGINGDIRECTORY:?BUILD_STAGINGDIRECTORY environment variable not set}"
+
+          echo "Build knack"
+          pip install -U pip setuptools wheel
+          python setup.py bdist_wheel -d "${BUILD_STAGINGDIRECTORY}"
+          python setup.py sdist -d "${BUILD_STAGINGDIRECTORY}"
+        displayName: Build Wheel
+      - task: PublishPipelineArtifact@0
+        displayName: 'Publish Artifact: pypi'
+        inputs:
+          TargetPath: $(Build.ArtifactStagingDirectory)
+          ArtifactName: pypi
+      - task: DownloadPipelineArtifact@1
+        displayName: 'Download PyPI Packages'
+        inputs:
+          TargetPath: '$(Build.ArtifactStagingDirectory)/pypi'
+          artifactName: pypi
+      - bash: |
+          set -ev
+
+          cd $BUILD_ARTIFACTSTAGINGDIRECTORY/pypi
+          pwd
+          ls -la
+        displayName: Test Build Wheel

@@ -25,18 +25,16 @@ for service in blob fileshare filedatalake queue; do
     tgt=../azure/multiapi/storagev2/$service/v$ver
     mkdir -p $tgt
     src=$src_root/$service
-    cp -R $src $tgt
+    cp -R $src/. $tgt
 
-    for f in `find $tgt/$service -name '*.py'`; do
+    for f in `find $tgt -name '*.py'`; do
         echo Updating $f
         # remove BOM
         sed -i '1s/^\xEF\xBB\xBF//' $f
 
         if [ "$service" = "filedatalake" ]; then
             echo "filedatalake"
-            # make relative reference to azure.storage.blob
-            # path=$(realpath --relative-to=$f $tgt/$service)
-            # dots=$(echo ${path//".."/"."} | tr -d /)
+           
             sed -i "s/from azure.storage.blob import/from azure.multiapi.storagev2.blob.v2019_07_07 import/g" $f
             sed -i "s/from azure.storage.blob./from azure.multiapi.storagev2.blob.v2019_07_07./g" $f
         fi

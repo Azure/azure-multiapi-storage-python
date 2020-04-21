@@ -38,6 +38,9 @@ for service in blob fileshare filedatalake queue; do
             sed -i "s/from azure.storage.blob import/from azure.multiapi.storagev2.blob.v2019_07_07 import/g" $f
             sed -i "s/from azure.storage.blob./from azure.multiapi.storagev2.blob.v2019_07_07./g" $f
         fi
+
+        namespace=azure.storage.$service
+        sed -i "s/from $namespace./from ./g" $f
     done
 
 done

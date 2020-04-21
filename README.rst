@@ -22,14 +22,14 @@ Change Log
 * Add support for storage data plane track2 SDK with new package azure-multiapi-storagev2:
     - blob
         - v2019-02-02
-	    - v2019-07-07
+        - v2019-07-07
     - filedatalake
         - v2018-11-09
     - fileshare
         - v2019-02-02
         - v2019-07-07
     - queue
-	    - v2018-03-28
+	- v2018-03-28
 
 0.2.4
 +++++

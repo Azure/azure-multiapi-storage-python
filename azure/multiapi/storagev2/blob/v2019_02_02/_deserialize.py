@@ -14,7 +14,7 @@ from ._shared.response_handlers import deserialize_metadata
 from ._models import BlobProperties, ContainerProperties
 
 if TYPE_CHECKING:
-    from azure.storage.blob._generated.models import PageList
+    from ._generated.models import PageList
 
 
 def deserialize_blob_properties(response, obj, headers):

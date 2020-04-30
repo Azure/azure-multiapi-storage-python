@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.3.1
++++++
+* Fix package issue
+
 0.3.0
 +++++
 * Add support for storage data plane track2 SDK with new package azure-multiapi-storagev2:

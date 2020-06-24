@@ -57,7 +57,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
     ],
     zip_safe=False,
-    packages=find_packages(),
+    packages=find_packages(exclude=["azure"]),
     install_requires=[
         'azure-common',
         'cryptography',

@@ -35,7 +35,7 @@ except ImportError:
 
 setup(
     name='azure-multiapi-storage',
-    version='0.3.4',
+    version='0.3.5',
     description='Microsoft Azure Storage Client Library for Python with multi API version support.',
     long_description=open('README.rst', 'r').read(),
     license='MIT',
@@ -57,7 +57,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
     ],
     zip_safe=False,
-    packages=find_packages(),
+    packages=find_packages(exclude=["azure"]),
     install_requires=[
         'azure-common',
         'cryptography',

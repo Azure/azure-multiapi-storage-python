@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.3.5
++++++
+* Fix package problem: update prg_resources to pkgutil
+
 0.3.4
 +++++
 * Remove __init__.py under azure

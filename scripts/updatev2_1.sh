@@ -2,11 +2,13 @@
 
 # This scripts pull the latest Azure Storage SDK and update this multiapi package accordingly.
 
-workdir=$PWD'/scripts'
-echo $workdir
+workdir=$(cd $(dirname $0); pwd)
 cd $workdir
+
 if [ ! -d venv ]; then
+    python -m virtualenv venv
     . venv/bin/activate
+    pip install azure-storage-file-datalake azure-storage-blob azure-storage-file-share azure-storage-queue
 fi
 
 

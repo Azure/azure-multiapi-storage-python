@@ -919,7 +919,7 @@ class BaseBlobService(StorageClient):
         :return: str
         '''
         _validate_not_none('lease_duration', lease_duration)
-        if lease_duration is not -1 and\
+        if lease_duration != -1 and\
            (lease_duration < 15 or lease_duration > 60):
             raise ValueError(_ERROR_INVALID_LEASE_DURATION)
 
@@ -2262,7 +2262,7 @@ class BaseBlobService(StorageClient):
         '''
         _validate_not_none('lease_duration', lease_duration)
 
-        if lease_duration is not -1 and\
+        if lease_duration != -1 and\
            (lease_duration < 15 or lease_duration > 60):
             raise ValueError(_ERROR_INVALID_LEASE_DURATION)
         response = self._lease_blob_impl(container_name,

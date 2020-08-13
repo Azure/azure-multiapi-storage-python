@@ -76,7 +76,7 @@ class _ServiceParameters(object):
             if custom_domain:
                 parsed_url = urlparse(custom_domain)
                 self.primary_endpoint = parsed_url.netloc + parsed_url.path
-                self.protocol = self.protocol if parsed_url.scheme is '' else parsed_url.scheme
+                self.protocol = self.protocol if parsed_url.scheme == '' else parsed_url.scheme
             else:
                 if not self.account_name:
                     raise ValueError(_ERROR_STORAGE_MISSING_INFO)         

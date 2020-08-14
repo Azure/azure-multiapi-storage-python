@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.3.7
++++++
+* Fix syntax warning in python 3.8
+
 0.3.6
 +++++
 * Fix package problem to include packages under the azure namespace

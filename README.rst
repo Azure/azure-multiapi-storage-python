@@ -19,7 +19,13 @@ Change Log
 ----------
 0.4.0
 +++++
-* Add v2019-12-12 for azure.multiapi.storagev2.blob
+* Add new api support for azure-multiapi-storagev2:
+    - blob
+        - v2019-12-12
+    - filedatalake
+        - v2019-12-12
+    - fileshare
+        - v2019-12-12
 
 0.3.7
 +++++

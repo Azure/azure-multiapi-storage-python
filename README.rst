@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.4.0
++++++
+* Add v2019-12-12 for azure.multiapi.storagev2.blob
+
 0.3.7
 +++++
 * Fix syntax warning in python 3.8

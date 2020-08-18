@@ -17,7 +17,7 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
-0.4.0
+0.4.1
 +++++
 * Add new api support for azure-multiapi-storagev2:
     - blob

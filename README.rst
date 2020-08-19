@@ -17,6 +17,15 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.4.1
++++++
+* Add tags support for blob
+* Add new api support for azure-multiapi-storagev2:
+    - filedatalake
+        - v2019-12-12
+    - fileshare
+        - v2019-12-12
+
 0.4.0
 +++++
 * Add v2019-12-12 for azure.multiapi.storagev2.blob

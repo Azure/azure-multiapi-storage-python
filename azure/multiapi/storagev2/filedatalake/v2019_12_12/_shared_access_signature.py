@@ -5,8 +5,8 @@
 # --------------------------------------------------------------------------
 from typing import TYPE_CHECKING
 
-from azure.multiapi.storagev2.blob.v2019_07_07 import generate_account_sas as generate_blob_account_sas
-from azure.multiapi.storagev2.blob.v2019_07_07 import generate_container_sas, generate_blob_sas
+from azure.multiapi.storagev2.blob.v2019_12_12 import generate_account_sas as generate_blob_account_sas
+from azure.multiapi.storagev2.blob.v2019_12_12 import generate_container_sas, generate_blob_sas
 if TYPE_CHECKING:
     import datetime
     from ._models import AccountSasPermissions, FileSystemSasPermissions, FileSasPermissions, ResourceTypes, \

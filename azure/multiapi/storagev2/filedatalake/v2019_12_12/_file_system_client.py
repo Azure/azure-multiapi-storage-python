@@ -13,7 +13,7 @@ except ImportError:
 
 import six
 from azure.core.paging import ItemPaged
-from azure.multiapi.storagev2.blob.v2019_07_07 import ContainerClient
+from azure.multiapi.storagev2.blob.v2019_12_12 import ContainerClient
 from ._shared.base_client import StorageAccountHostsMixin, parse_query, parse_connection_str
 from ._serialize import convert_dfs_url_to_blob_url
 from ._models import LocationMode, FileSystemProperties, PathPropertiesPaged, PublicAccess

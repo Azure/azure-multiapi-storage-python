@@ -12,7 +12,7 @@ except ImportError:
 
 import six
 
-from azure.multiapi.storagev2.blob.v2019_07_07 import BlobClient
+from azure.multiapi.storagev2.blob.v2019_12_12 import BlobClient
 from ._shared.base_client import StorageAccountHostsMixin, parse_query
 from ._shared.response_handlers import return_response_headers
 from ._serialize import convert_dfs_url_to_blob_url, get_mod_conditions, \

@@ -8,17 +8,17 @@
 from enum import Enum
 
 from azure.core.paging import PageIterator
-from azure.multiapi.storagev2.blob.v2019_07_07 import LeaseProperties as BlobLeaseProperties
-from azure.multiapi.storagev2.blob.v2019_07_07 import AccountSasPermissions as BlobAccountSasPermissions
-from azure.multiapi.storagev2.blob.v2019_07_07 import ResourceTypes as BlobResourceTypes
-from azure.multiapi.storagev2.blob.v2019_07_07 import UserDelegationKey as BlobUserDelegationKey
-from azure.multiapi.storagev2.blob.v2019_07_07 import ContentSettings as BlobContentSettings
-from azure.multiapi.storagev2.blob.v2019_07_07 import ContainerSasPermissions, BlobSasPermissions
-from azure.multiapi.storagev2.blob.v2019_07_07 import AccessPolicy as BlobAccessPolicy
-from azure.multiapi.storagev2.blob.v2019_07_07 import DelimitedTextDialect as BlobDelimitedTextDialect
-from azure.multiapi.storagev2.blob.v2019_07_07 import DelimitedJsonDialect as BlobDelimitedJSON
-from azure.multiapi.storagev2.blob.v2019_07_07._generated.models import StorageErrorException
-from azure.multiapi.storagev2.blob.v2019_07_07._models import ContainerPropertiesPaged
+from azure.multiapi.storagev2.blob.v2019_12_12 import LeaseProperties as BlobLeaseProperties
+from azure.multiapi.storagev2.blob.v2019_12_12 import AccountSasPermissions as BlobAccountSasPermissions
+from azure.multiapi.storagev2.blob.v2019_12_12 import ResourceTypes as BlobResourceTypes
+from azure.multiapi.storagev2.blob.v2019_12_12 import UserDelegationKey as BlobUserDelegationKey
+from azure.multiapi.storagev2.blob.v2019_12_12 import ContentSettings as BlobContentSettings
+from azure.multiapi.storagev2.blob.v2019_12_12 import ContainerSasPermissions, BlobSasPermissions
+from azure.multiapi.storagev2.blob.v2019_12_12 import AccessPolicy as BlobAccessPolicy
+from azure.multiapi.storagev2.blob.v2019_12_12 import DelimitedTextDialect as BlobDelimitedTextDialect
+from azure.multiapi.storagev2.blob.v2019_12_12 import DelimitedJsonDialect as BlobDelimitedJSON
+from azure.multiapi.storagev2.blob.v2019_12_12._generated.models import StorageErrorException
+from azure.multiapi.storagev2.blob.v2019_12_12._models import ContainerPropertiesPaged
 from ._deserialize import return_headers_and_deserialized_path_list
 from ._generated.models import Path
 from ._shared.models import DictMixin

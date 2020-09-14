@@ -7,7 +7,7 @@
 
 from azure.core.paging import ItemPaged
 
-from azure.multiapi.storagev2.blob.v2019_07_07.aio import BlobServiceClient
+from azure.multiapi.storagev2.blob.v2019_12_12.aio import BlobServiceClient
 from .._generated.aio import DataLakeStorageClient
 from .._shared.base_client_async import AsyncStorageAccountHostsMixin
 from ._file_system_client_async import FileSystemClient

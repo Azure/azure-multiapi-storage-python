@@ -5,14 +5,14 @@
 # --------------------------------------------------------------------------
 
 try:
-    from urllib.parse import urlparse, quote, unquote
+    from urllib.parse import urlparse, quote
 except ImportError:
     from urlparse import urlparse # type: ignore
-    from urllib2 import quote, unquote  # type: ignore
+    from urllib2 import quote  # type: ignore
 
 import six
 
-from azure.multiapi.storagev2.blob.v2019_12_12 import BlobClient
+from azure.multiapi.storagev2.blob.v2019_07_07 import BlobClient
 from ._shared.base_client import StorageAccountHostsMixin, parse_query
 from ._shared.response_handlers import return_response_headers
 from ._serialize import convert_dfs_url_to_blob_url, get_mod_conditions, \
@@ -409,7 +409,7 @@ class PathClient(StorageAccountHostsMixin):
             path_http_headers = get_path_http_headers(content_settings)
 
         options = {
-            'rename_source': quote(unquote(rename_source)),
+            'rename_source': rename_source,
             'path_http_headers': path_http_headers,
             'lease_access_conditions': access_conditions,
             'source_lease_id': source_lease_id,

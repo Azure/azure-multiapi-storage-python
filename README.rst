@@ -17,6 +17,11 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.5.0
++++++
+* Utilize azure-stroage-blob 12.5.0  for blob new feature support
+* Utilize azure-stroage-queue 12.1.3  for queue new feature support
+
 0.4.1
 +++++
 * Add tags support for blob

@@ -5,7 +5,7 @@
 # --------------------------------------------------------------------------
 # pylint: disable=invalid-overridden-method
 from azure.core.exceptions import AzureError
-from azure.multiapi.storagev2.blob.v2019_07_07.aio import BlobClient
+from azure.multiapi.storagev2.blob.v2020_02_10.aio import BlobClient
 from .._shared.base_client_async import AsyncStorageAccountHostsMixin
 from .._path_client import PathClient as PathClientBase
 from .._models import DirectoryProperties, AccessControlChangeResult, AccessControlChangeFailure, \

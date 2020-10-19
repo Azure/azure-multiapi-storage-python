@@ -6,7 +6,7 @@
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
 # pylint: disable=super-init-not-called, too-many-lines
 from azure.core.async_paging import AsyncPageIterator
-from azure.multiapi.storagev2.blob.v2019_07_07.aio._models import ContainerPropertiesPaged
+from azure.multiapi.storagev2.blob.v2020_02_10.aio._models import ContainerPropertiesPaged
 
 from .._deserialize import return_headers_and_deserialized_path_list, process_storage_error
 from .._generated.models import StorageErrorException, Path

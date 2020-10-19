@@ -8,7 +8,7 @@ cd $workdir
 if [ ! -d venv ]; then
     python -m virtualenv venv
     . venv/bin/activate
-    pip install azure-storage-file-datalake azure-storage-blob azure-storage-file-share azure-storage-queue -U
+    pip install azure-storage-file-datalake==12.2.0b1 azure-storage-blob==12.6.0b1 azure-storage-file-share azure-storage-queue -U
 fi
 
 
@@ -34,9 +34,13 @@ for service in blob fileshare filedatalake queue; do
 
         if [ "$service" = "filedatalake" ]; then
             echo "filedatalake"
-           
-            sed -i "s/from azure.storage.blob import/from azure.multiapi.storagev2.blob.v2019_07_07 import/g" $f
-            sed -i "s/from azure.storage.blob./from azure.multiapi.storagev2.blob.v2019_07_07./g" $f
+            default="2019_07_07"
+            if [[ "$ver" > "$default" ]]; then
+                default=$ver
+            fi
+
+            sed -i "s/from azure.storage.blob import/from azure.multiapi.storagev2.blob.v$default import/g" $f
+            sed -i "s/from azure.storage.blob./from azure.multiapi.storagev2.blob.v$default./g" $f
         fi
 
         namespace=azure.storage.$service

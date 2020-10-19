@@ -7,16 +7,16 @@
 # pylint: disable=super-init-not-called, too-many-lines
 from enum import Enum
 
-from azure.multiapi.storagev2.blob.v2019_07_07 import LeaseProperties as BlobLeaseProperties
-from azure.multiapi.storagev2.blob.v2019_07_07 import AccountSasPermissions as BlobAccountSasPermissions
-from azure.multiapi.storagev2.blob.v2019_07_07 import ResourceTypes as BlobResourceTypes
-from azure.multiapi.storagev2.blob.v2019_07_07 import UserDelegationKey as BlobUserDelegationKey
-from azure.multiapi.storagev2.blob.v2019_07_07 import ContentSettings as BlobContentSettings
-from azure.multiapi.storagev2.blob.v2019_07_07 import AccessPolicy as BlobAccessPolicy
-from azure.multiapi.storagev2.blob.v2019_07_07 import DelimitedTextDialect as BlobDelimitedTextDialect
-from azure.multiapi.storagev2.blob.v2019_07_07 import DelimitedJsonDialect as BlobDelimitedJSON
-from azure.multiapi.storagev2.blob.v2019_07_07 import ArrowDialect as BlobArrowDialect
-from azure.multiapi.storagev2.blob.v2019_07_07._models import ContainerPropertiesPaged
+from azure.multiapi.storagev2.blob.v2020_02_10 import LeaseProperties as BlobLeaseProperties
+from azure.multiapi.storagev2.blob.v2020_02_10 import AccountSasPermissions as BlobAccountSasPermissions
+from azure.multiapi.storagev2.blob.v2020_02_10 import ResourceTypes as BlobResourceTypes
+from azure.multiapi.storagev2.blob.v2020_02_10 import UserDelegationKey as BlobUserDelegationKey
+from azure.multiapi.storagev2.blob.v2020_02_10 import ContentSettings as BlobContentSettings
+from azure.multiapi.storagev2.blob.v2020_02_10 import AccessPolicy as BlobAccessPolicy
+from azure.multiapi.storagev2.blob.v2020_02_10 import DelimitedTextDialect as BlobDelimitedTextDialect
+from azure.multiapi.storagev2.blob.v2020_02_10 import DelimitedJsonDialect as BlobDelimitedJSON
+from azure.multiapi.storagev2.blob.v2020_02_10 import ArrowDialect as BlobArrowDialect
+from azure.multiapi.storagev2.blob.v2020_02_10._models import ContainerPropertiesPaged
 from ._shared.models import DictMixin
 
 

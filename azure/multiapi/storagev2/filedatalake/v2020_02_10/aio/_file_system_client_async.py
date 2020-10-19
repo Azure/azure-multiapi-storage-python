@@ -16,7 +16,7 @@ from azure.core.tracing.decorator import distributed_trace
 from azure.core.async_paging import AsyncItemPaged
 
 from azure.core.tracing.decorator_async import distributed_trace_async
-from azure.multiapi.storagev2.blob.v2019_07_07.aio import ContainerClient
+from azure.multiapi.storagev2.blob.v2020_02_10.aio import ContainerClient
 
 from ._data_lake_file_client_async import DataLakeFileClient
 from ._data_lake_directory_client_async import DataLakeDirectoryClient

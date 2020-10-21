@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.5.2
++++++
+* Fix minor issue in filedatalake
+
 0.5.1
 +++++
 * Fix import issue for filedatalake

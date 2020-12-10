@@ -8,7 +8,7 @@ cd $workdir
 if [ ! -d venv ]; then
     python -m virtualenv venv
     . venv/bin/activate
-    pip install azure-storage-file-datalake==12.2.0b1 azure-storage-blob==12.6.0b1 azure-storage-file-share azure-storage-queue -U
+    pip install azure-storage-file-datalake azure-storage-blob azure-storage-file-share azure-storage-queue -U
 fi
 
 

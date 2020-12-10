@@ -17,6 +17,15 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.5.3
++++++
+* New features for fileshare and queue:
+    - fileshare
+        - Added set_share_properties which allows setting share tier.
+    - queue
+        - Added receive_message on QueueClient to support receiving one message from queue
+* Fix minor issues for blob and filedatalake
+
 0.5.2
 +++++
 * Fix minor issue in filedatalake

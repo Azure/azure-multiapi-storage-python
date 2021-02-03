@@ -5,6 +5,7 @@
 # --------------------------------------------------------------------------
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
 # pylint: disable=super-init-not-called, too-many-lines
+from datetime import datetime
 from enum import Enum
 
 from azure.multiapi.storagev2.blob.v2020_02_10 import LeaseProperties as BlobLeaseProperties
@@ -211,7 +212,7 @@ class PathProperties(object):
         path_prop.owner = generated.owner
         path_prop.group = generated.group
         path_prop.permissions = generated.permissions
-        path_prop.last_modified = generated.last_modified
+        path_prop.last_modified = datetime.strptime(generated.last_modified, "%a, %d %b %Y %H:%M:%S %Z")
         path_prop.is_directory = bool(generated.is_directory)
         path_prop.etag = generated.additional_properties.get('etag')
         path_prop.content_length = generated.content_length
@@ -817,21 +818,4 @@ class AccessControlChanges(DictMixin):
         self.batch_counters = batch_counters
         self.aggregate_counters = aggregate_counters
         self.batch_failures = batch_failures
-        self.continuation = continuation
-
-
-class DataLakeAclChangeFailedError(Exception):
-    """The error happened during set/update/remove acl recursive operation.
-
-    :ivar ~azure.core.exceptions.AzureError error:
-        The exception.
-    :ivar str description:
-        A description of the error.
-    :ivar str continuation:
-        An opaque continuation token that may be used to resume the operations in case of failures.
-    """
-
-    def __init__(self, error, description, continuation):
-        self.error = error
-        self.description = description
         self.continuation = continuation

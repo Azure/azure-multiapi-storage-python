@@ -6,10 +6,11 @@
 # pylint: disable=invalid-overridden-method
 
 from azure.core.paging import ItemPaged
+from azure.core.pipeline import AsyncPipeline
 
 from azure.multiapi.storagev2.blob.v2020_02_10.aio import BlobServiceClient
-from .._generated.aio import DataLakeStorageClient
-from .._shared.base_client_async import AsyncStorageAccountHostsMixin
+from .._generated.aio import AzureDataLakeStorageRESTAPI
+from .._shared.base_client_async import AsyncTransportWrapper, AsyncStorageAccountHostsMixin
 from ._file_system_client_async import FileSystemClient
 from .._data_lake_service_client import DataLakeServiceClient as DataLakeServiceClientBase
 from .._shared.policies_async import ExponentialRetry
@@ -39,9 +40,11 @@ class DataLakeServiceClient(AsyncStorageAccountHostsMixin, DataLakeServiceClient
         authenticated with a SAS token.
     :param credential:
         The credentials with which to authenticate. This is optional if the
-        account URL already has a SAS token. The value can be a SAS token string, and account
+        account URL already has a SAS token. The value can be a SAS token string,
+        an instance of a AzureSasCredential from azure.core.credentials, an account
         shared access key, or an instance of a TokenCredentials class from azure.identity.
-        If the URL already has a SAS token, specifying an explicit credential will take priority.
+        If the resource URI already contains a SAS token, this will be ignored in favor of an explicit credential
+        - except in the case of AzureSasCredential, where the conflicting SAS tokens will raise a ValueError.
 
     .. admonition:: Example:
 
@@ -74,7 +77,7 @@ class DataLakeServiceClient(AsyncStorageAccountHostsMixin, DataLakeServiceClient
         )
         self._blob_service_client = BlobServiceClient(self._blob_account_url, credential, **kwargs)
         self._blob_service_client._hosts[LocationMode.SECONDARY] = ""  #pylint: disable=protected-access
-        self._client = DataLakeStorageClient(self.url, None, None, pipeline=self._pipeline)
+        self._client = AzureDataLakeStorageRESTAPI(self.url, pipeline=self._pipeline)
         self._loop = kwargs.get('loop', None)
 
     async def __aexit__(self, *args):
@@ -276,6 +279,10 @@ class DataLakeServiceClient(AsyncStorageAccountHostsMixin, DataLakeServiceClient
         except AttributeError:
             file_system_name = file_system
 
+        _pipeline = AsyncPipeline(
+            transport=AsyncTransportWrapper(self._pipeline._transport), # pylint: disable = protected-access
+            policies=self._pipeline._impl_policies # pylint: disable = protected-access
+        )
         return FileSystemClient(self.url, file_system_name, credential=self._raw_credential,
                                 _configuration=self._config,
                                 _pipeline=self._pipeline, _hosts=self._hosts,
@@ -318,6 +325,11 @@ class DataLakeServiceClient(AsyncStorageAccountHostsMixin, DataLakeServiceClient
             directory_name = directory.name
         except AttributeError:
             directory_name = directory
+
+        _pipeline = AsyncPipeline(
+            transport=AsyncTransportWrapper(self._pipeline._transport), # pylint: disable = protected-access
+            policies=self._pipeline._impl_policies # pylint: disable = protected-access
+        )
         return DataLakeDirectoryClient(self.url, file_system_name, directory_name=directory_name,
                                        credential=self._raw_credential,
                                        _configuration=self._config, _pipeline=self._pipeline,
@@ -364,6 +376,10 @@ class DataLakeServiceClient(AsyncStorageAccountHostsMixin, DataLakeServiceClient
         except AttributeError:
             pass
 
+        _pipeline = AsyncPipeline(
+            transport=AsyncTransportWrapper(self._pipeline._transport), # pylint: disable = protected-access
+            policies=self._pipeline._impl_policies # pylint: disable = protected-access
+        )
         return DataLakeFileClient(
             self.url, file_system_name, file_path=file_path, credential=self._raw_credential,
             _hosts=self._hosts, _configuration=self._config, _pipeline=self._pipeline,

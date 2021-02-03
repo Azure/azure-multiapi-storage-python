@@ -30,7 +30,7 @@ for service in blob fileshare filedatalake queue; do
 
     mkdir -p $tgt
     src=$src_root/$service
-    cp -avr $src/. $tgt
+    cp -R $src/. $tgt
 
     for f in `find $tgt -name '*.py'`; do
         echo Updating $f

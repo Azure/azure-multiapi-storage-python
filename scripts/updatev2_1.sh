@@ -8,7 +8,7 @@ cd $workdir
 if [ ! -d venv ]; then
     python -m virtualenv venv
     . venv/bin/activate
-    pip install azure-storage-file-datalake==12.2.0b1 azure-storage-blob==12.6.0b1 azure-storage-file-share azure-storage-queue -U
+    pip install azure-storage-file-datalake azure-storage-blob azure-storage-file-share azure-storage-queue -U
 fi
 
 
@@ -19,10 +19,15 @@ src_root=$(cd venv/lib/$(ls venv/lib); pwd)/site-packages/azure/storage
 for service in blob fileshare filedatalake queue; do
     ver=$(find venv -name 'version.py' | grep $service | xargs grep 'VERSION')
     ver=${ver#VERSION = \"}
-    ver=${ver%\"}
+    if [ -z "$ver" ]; then
+        ver=$(find venv -name '_configuration.py' | grep $service | xargs grep 'version' | head -n 1)
+        ver=${ver#*self.version = \"}
+    fi
+    ver=${ver%\"*}
     ver=${ver//-/_}
 
     tgt=../azure/multiapi/storagev2/$service/v$ver
+
     mkdir -p $tgt
     src=$src_root/$service
     cp -R $src/. $tgt

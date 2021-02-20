@@ -65,7 +65,8 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
     :type queue_name: str
     :param credential:
         The credentials with which to authenticate. This is optional if the
-        account URL already has a SAS token. The value can be a SAS token string, an account
+        account URL already has a SAS token. The value can be a SAS token string,
+        an instance of a AzureSasCredential from azure.core.credentials, an account
         shared access key, or an instance of a TokenCredentials class from azure.identity.
     :keyword str api_version:
         The Storage API version to use for requests. Default value is '2019-07-07'.
@@ -400,6 +401,62 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         except StorageErrorException as error:
             process_storage_error(error)
 
+    @distributed_trace_async
+    async def receive_message(self, **kwargs):
+        # type: (Optional[Any]) -> QueueMessage
+        """Removes one message from the front of the queue.
+
+        When the message is retrieved from the queue, the response includes the message
+        content and a pop_receipt value, which is required to delete the message.
+        The message is not automatically deleted from the queue, but after it has
+        been retrieved, it is not visible to other clients for the time interval
+        specified by the visibility_timeout parameter.
+
+        If the key-encryption-key or resolver field is set on the local service object, the message will be
+        decrypted before being returned.
+
+        :keyword int visibility_timeout:
+            If not specified, the default value is 0. Specifies the
+            new visibility timeout value, in seconds, relative to server time.
+            The value must be larger than or equal to 0, and cannot be
+            larger than 7 days. The visibility timeout of a message cannot be
+            set to a value later than the expiry time. visibility_timeout
+            should be set to a value smaller than the time-to-live value.
+        :keyword int timeout:
+            The server timeout, expressed in seconds.
+        :return:
+            Returns a message from the Queue.
+        :rtype: ~azure.storage.queue.QueueMessage
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/queue_samples_message_async.py
+                :start-after: [START receive_one_message]
+                :end-before: [END receive_one_message]
+                :language: python
+                :dedent: 12
+                :caption: Receive one message from the queue.
+        """
+        visibility_timeout = kwargs.pop('visibility_timeout', None)
+        timeout = kwargs.pop('timeout', None)
+        self._config.message_decode_policy.configure(
+            require_encryption=self.require_encryption,
+            key_encryption_key=self.key_encryption_key,
+            resolver=self.key_resolver_function)
+        try:
+            message = await self._client.messages.dequeue(
+                number_of_messages=1,
+                visibilitytimeout=visibility_timeout,
+                timeout=timeout,
+                cls=self._config.message_decode_policy,
+                **kwargs
+            )
+            wrapped_message = QueueMessage._from_generated(  # pylint: disable=protected-access
+                message[0]) if message != [] else None
+            return wrapped_message
+        except StorageErrorException as error:
+            process_storage_error(error)
+
     @distributed_trace
     def receive_messages(self, **kwargs):
         # type: (Optional[Any]) -> AsyncItemPaged[QueueMessage]
@@ -419,6 +476,8 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             messages to retrieve from the queue, up to a maximum of 32. If
             fewer are visible, the visible messages are returned. By default,
             a single message is retrieved from the queue with this operation.
+            `by_page()` can be used to provide a page iterator on the AsyncItemPaged if messages_per_page is set.
+            `next()` can be used to get the next page.
         :keyword int visibility_timeout:
             If not specified, the default value is 0. Specifies the
             new visibility timeout value, in seconds, relative to server time.

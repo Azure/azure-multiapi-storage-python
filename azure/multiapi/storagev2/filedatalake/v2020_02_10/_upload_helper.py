@@ -11,7 +11,7 @@ from ._shared.response_handlers import return_response_headers
 from ._shared.uploads import (
     upload_data_chunks,
     DataLakeFileChunkUploader)
-from azure.core.exceptions import HttpResponseError
+from ...core.exceptions import HttpResponseError
 
 
 def _any_conditions(modified_access_conditions=None, **kwargs):  # pylint: disable=unused-argument

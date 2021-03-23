@@ -17,6 +17,11 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.6.1
++++++
+* Support undelete filesystem
+* Fix minor issues in filedatalake
+
 0.6.0
 +++++
 * blob(12.7.1): Support v2020-04-08

@@ -17,7 +17,7 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
-0.5.2
+0.6.1
 +++++
 * Support undelete filesystem
 * Fix minor issues in filedatalake

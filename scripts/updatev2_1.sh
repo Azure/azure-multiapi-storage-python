@@ -50,6 +50,7 @@ for service in blob fileshare filedatalake queue; do
 
         namespace=azure.storage.$service
         sed -i "s/from $namespace./from ./g" $f
+        sed -i "s/from ...core.exceptions/from azure.core.exceptions/g" $f
     done
 
 done

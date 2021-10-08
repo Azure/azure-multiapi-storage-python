@@ -39,10 +39,10 @@ for service in blob fileshare filedatalake queue; do
 
         if [ "$service" = "filedatalake" ]; then
             echo "filedatalake"
-            default="2019_07_07"
-            if [[ "$ver" > "$default" ]]; then
-                default=$ver
-            fi
+            default="2020_04_08"
+            # if [[ "$ver" > "$default" ]]; then
+            #     default=$ver
+            # fi
 
             sed -i "s/from azure.storage.blob import/from azure.multiapi.storagev2.blob.v$default import/g" $f
             sed -i "s/from azure.storage.blob./from azure.multiapi.storagev2.blob.v$default./g" $f

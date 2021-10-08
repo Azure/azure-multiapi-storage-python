@@ -5,7 +5,7 @@
 # --------------------------------------------------------------------------
 # pylint: disable=too-few-public-methods, too-many-instance-attributes
 # pylint: disable=super-init-not-called, too-many-lines
-from azure.multiapi.storagev2.blob.v2020_04_08.aio._models import ContainerPropertiesPaged
+from azure.multiapi.storagev2.blob.v2020_06_12.aio._models import ContainerPropertiesPaged
 from .._models import FileSystemProperties
 
 

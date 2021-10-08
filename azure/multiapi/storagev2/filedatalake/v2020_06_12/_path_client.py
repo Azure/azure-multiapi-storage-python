@@ -15,7 +15,7 @@ except ImportError:
 import six
 
 from azure.core.exceptions import AzureError, HttpResponseError
-from azure.multiapi.storagev2.blob.v2020_04_08 import BlobClient
+from azure.multiapi.storagev2.blob.v2020_06_12 import BlobClient
 from ._data_lake_lease import DataLakeLeaseClient
 from ._deserialize import process_storage_error
 from ._generated import AzureDataLakeStorageRESTAPI

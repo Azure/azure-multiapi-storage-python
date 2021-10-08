@@ -13,7 +13,7 @@ except ImportError:
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import Pipeline
 
-from azure.multiapi.storagev2.blob.v2020_04_08 import BlobServiceClient
+from azure.multiapi.storagev2.blob.v2020_06_12 import BlobServiceClient
 from ._shared.base_client import TransportWrapper, StorageAccountHostsMixin, parse_query, parse_connection_str
 from ._deserialize import get_datalake_service_properties
 from ._file_system_client import FileSystemClient

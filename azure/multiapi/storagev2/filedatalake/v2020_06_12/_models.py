@@ -8,17 +8,17 @@
 from datetime import datetime
 from enum import Enum
 
-from azure.multiapi.storagev2.blob.v2020_04_08 import LeaseProperties as BlobLeaseProperties
-from azure.multiapi.storagev2.blob.v2020_04_08 import AccountSasPermissions as BlobAccountSasPermissions
-from azure.multiapi.storagev2.blob.v2020_04_08 import ResourceTypes as BlobResourceTypes
-from azure.multiapi.storagev2.blob.v2020_04_08 import UserDelegationKey as BlobUserDelegationKey
-from azure.multiapi.storagev2.blob.v2020_04_08 import ContentSettings as BlobContentSettings
-from azure.multiapi.storagev2.blob.v2020_04_08 import AccessPolicy as BlobAccessPolicy
-from azure.multiapi.storagev2.blob.v2020_04_08 import DelimitedTextDialect as BlobDelimitedTextDialect
-from azure.multiapi.storagev2.blob.v2020_04_08 import DelimitedJsonDialect as BlobDelimitedJSON
-from azure.multiapi.storagev2.blob.v2020_04_08 import ArrowDialect as BlobArrowDialect
-from azure.multiapi.storagev2.blob.v2020_04_08._models import ContainerPropertiesPaged
-from azure.multiapi.storagev2.blob.v2020_04_08._generated.models import Logging as GenLogging, Metrics as GenMetrics, \
+from azure.multiapi.storagev2.blob.v2020_06_12 import LeaseProperties as BlobLeaseProperties
+from azure.multiapi.storagev2.blob.v2020_06_12 import AccountSasPermissions as BlobAccountSasPermissions
+from azure.multiapi.storagev2.blob.v2020_06_12 import ResourceTypes as BlobResourceTypes
+from azure.multiapi.storagev2.blob.v2020_06_12 import UserDelegationKey as BlobUserDelegationKey
+from azure.multiapi.storagev2.blob.v2020_06_12 import ContentSettings as BlobContentSettings
+from azure.multiapi.storagev2.blob.v2020_06_12 import AccessPolicy as BlobAccessPolicy
+from azure.multiapi.storagev2.blob.v2020_06_12 import DelimitedTextDialect as BlobDelimitedTextDialect
+from azure.multiapi.storagev2.blob.v2020_06_12 import DelimitedJsonDialect as BlobDelimitedJSON
+from azure.multiapi.storagev2.blob.v2020_06_12 import ArrowDialect as BlobArrowDialect
+from azure.multiapi.storagev2.blob.v2020_06_12._models import ContainerPropertiesPaged
+from azure.multiapi.storagev2.blob.v2020_06_12._generated.models import Logging as GenLogging, Metrics as GenMetrics, \
     RetentionPolicy as GenRetentionPolicy, StaticWebsite as GenStaticWebsite, CorsRule as GenCorsRule
 from ._shared.models import DictMixin
 

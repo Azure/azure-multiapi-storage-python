@@ -17,7 +17,7 @@ from azure.core.pipeline import AsyncPipeline
 from azure.core.async_paging import AsyncItemPaged
 
 from azure.core.tracing.decorator_async import distributed_trace_async
-from azure.multiapi.storagev2.blob.v2020_04_08.aio import ContainerClient
+from azure.multiapi.storagev2.blob.v2020_06_12.aio import ContainerClient
 from .._serialize import get_api_version
 from .._deserialize import process_storage_error, is_file_path
 from .._generated.models import ListBlobsIncludeItem

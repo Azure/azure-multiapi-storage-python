@@ -9,7 +9,7 @@ from typing import Optional, Any, Dict
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import AsyncPipeline
 
-from azure.multiapi.storagev2.blob.v2020_04_08.aio import BlobServiceClient
+from azure.multiapi.storagev2.blob.v2020_06_12.aio import BlobServiceClient
 from .._serialize import get_api_version
 from .._generated.aio import AzureDataLakeStorageRESTAPI
 from .._deserialize import get_datalake_service_properties

@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, Union
 
 from azure.core.exceptions import AzureError, HttpResponseError
-from azure.multiapi.storagev2.blob.v2020_04_08.aio import BlobClient
+from azure.multiapi.storagev2.blob.v2020_06_12.aio import BlobClient
 from .._serialize import get_api_version
 from .._shared.base_client_async import AsyncStorageAccountHostsMixin
 from .._path_client import PathClient as PathClientBase

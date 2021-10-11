@@ -16,6 +16,7 @@ except ImportError:
 
 import six
 
+from azure.core.exceptions import HttpResponseError
 from azure.core.paging import ItemPaged
 from azure.core.tracing.decorator import distributed_trace
 from ._shared.base_client import StorageAccountHostsMixin, parse_connection_str, parse_query
@@ -26,8 +27,8 @@ from ._shared.response_handlers import (
     return_headers_and_deserialized)
 from ._message_encoding import NoEncodePolicy, NoDecodePolicy
 from ._deserialize import deserialize_queue_properties, deserialize_queue_creation
-from ._generated import AzureQueueStorage, VERSION
-from ._generated.models import StorageErrorException, SignedIdentifier
+from ._generated import AzureQueueStorage
+from ._generated.models import SignedIdentifier
 from ._generated.models import QueueMessage as GenQueueMessage
 from ._models import QueueMessage, AccessPolicy, MessagesPaged
 
@@ -39,6 +40,10 @@ if TYPE_CHECKING:
 
 class QueueClient(StorageAccountHostsMixin):
     """A client to interact with a specific Queue.
+
+    For more optional configuration, please click
+    `here <https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/storage/azure-storage-queue
+    #optional-configuration>`_.
 
     :param str account_url:
         The URL to the storage account. In order to create a client given the full URI to the queue,
@@ -100,7 +105,8 @@ class QueueClient(StorageAccountHostsMixin):
         self._config.message_encode_policy = kwargs.get('message_encode_policy', None) or NoEncodePolicy()
         self._config.message_decode_policy = kwargs.get('message_decode_policy', None) or NoDecodePolicy()
         self._client = AzureQueueStorage(self.url, pipeline=self._pipeline)
-        self._client._config.version = kwargs.get('api_version', VERSION)  # pylint: disable=protected-access
+        default_api_version = self._client._config.version  # pylint: disable=protected-access
+        self._client._config.version = kwargs.get('api_version', default_api_version)  # pylint: disable=protected-access
 
     def _format_url(self, hostname):
         """Format the endpoint URL according to the current location
@@ -229,7 +235,7 @@ class QueueClient(StorageAccountHostsMixin):
                 headers=headers,
                 cls=deserialize_queue_creation,
                 **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -261,7 +267,7 @@ class QueueClient(StorageAccountHostsMixin):
         timeout = kwargs.pop('timeout', None)
         try:
             self._client.queue.delete(timeout=timeout, **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -291,7 +297,7 @@ class QueueClient(StorageAccountHostsMixin):
                 timeout=timeout,
                 cls=deserialize_queue_properties,
                 **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
         response.name = self.queue_name
         return response # type: ignore
@@ -328,7 +334,7 @@ class QueueClient(StorageAccountHostsMixin):
                 headers=headers,
                 cls=return_response_headers,
                 **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -348,7 +354,7 @@ class QueueClient(StorageAccountHostsMixin):
                 timeout=timeout,
                 cls=return_headers_and_deserialized,
                 **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
         return {s.id: s.access_policy or AccessPolicy() for s in identifiers}
 
@@ -403,7 +409,7 @@ class QueueClient(StorageAccountHostsMixin):
                 queue_acl=signed_identifiers or None,
                 timeout=timeout,
                 **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -481,7 +487,7 @@ class QueueClient(StorageAccountHostsMixin):
             queue_message.pop_receipt = enqueued[0].pop_receipt
             queue_message.next_visible_on = enqueued[0].time_next_visible
             return queue_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -537,7 +543,7 @@ class QueueClient(StorageAccountHostsMixin):
             wrapped_message = QueueMessage._from_generated(  # pylint: disable=protected-access
                 message[0]) if message != [] else None
             return wrapped_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -608,7 +614,7 @@ class QueueClient(StorageAccountHostsMixin):
                 **kwargs
             )
             return ItemPaged(command, results_per_page=messages_per_page, page_iterator_class=MessagesPaged)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -705,7 +711,7 @@ class QueueClient(StorageAccountHostsMixin):
             new_message.pop_receipt = response['popreceipt']
             new_message.next_visible_on = response['time_next_visible']
             return new_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -763,7 +769,7 @@ class QueueClient(StorageAccountHostsMixin):
             for peeked in messages:
                 wrapped_messages.append(QueueMessage._from_generated(peeked))  # pylint: disable=protected-access
             return wrapped_messages
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -786,7 +792,7 @@ class QueueClient(StorageAccountHostsMixin):
         timeout = kwargs.pop('timeout', None)
         try:
             self._client.messages.clear(timeout=timeout, **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -839,5 +845,5 @@ class QueueClient(StorageAccountHostsMixin):
                 queue_message_id=message_id,
                 **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)

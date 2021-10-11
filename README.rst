@@ -17,6 +17,19 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+0.7.0
++++++
+* blob:
+    - Support v2020-06-12(12.8.1)
+    - Support v2020-10-02(12.9.0)
+* fileshare:
+    - Minor fix for 2020-04-08(12.5.0)
+    - Support v2020-10-02(12.6.0)
+* filedatalake:
+    - Minor fix for 2020-02-10(12.3.1)
+    - Support v2020-06-12(12.5.0)
+* queue: Minor fix for 2018-03-28(12.1.6)
+
 0.6.2
 +++++
 * Fix import issue for filedatalake

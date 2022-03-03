@@ -103,13 +103,15 @@ class _ServiceParameters(object):
                     self.secondary_endpoint = None
 
     @staticmethod
-    def get_service_parameters(service, account_name=None, account_key=None, sas_token=None, token_credential= None,
+    def get_service_parameters(service, storage_account_url=None, account_name=None, account_key=None, sas_token=None, token_credential= None,
                                is_emulated=None, protocol=None, endpoint_suffix=None, custom_domain=None,
                                request_session=None, connection_string=None, socket_timeout=None):
         if connection_string:
             params = _ServiceParameters._from_connection_string(connection_string, service)
         elif is_emulated:
             params = _ServiceParameters(service, is_emulated=True, custom_domain=custom_domain)
+        elif storage_account_url:
+            params = _ServiceParameters(service, custom_domain=storage_account_url)
         elif account_name:
             if protocol.lower() != 'https' and token_credential is not None:
                 raise ValueError("Token credential is only supported with HTTPS.")

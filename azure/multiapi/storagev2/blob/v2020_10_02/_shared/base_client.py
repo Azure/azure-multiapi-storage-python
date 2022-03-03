@@ -225,7 +225,8 @@ class StorageAccountHostsMixin(object):  # pylint: disable=too-many-instance-att
         elif isinstance(credential, AzureSasCredential):
             self._credential_policy = AzureSasCredentialPolicy(credential)
         elif credential is not None:
-            raise TypeError("Unsupported credential: {}".format(credential))
+            pass
+            # raise TypeError("Unsupported credential: {}".format(credential))
 
         config = kwargs.get("_configuration") or create_configuration(**kwargs)
         if kwargs.get("_pipeline"):
@@ -346,16 +347,16 @@ class TransportWrapper(HttpTransport):
 
 
 def _format_shared_key_credential(account_name, credential):
-    if isinstance(credential, six.string_types):
-        if not account_name:
-            raise ValueError("Unable to determine account name for shared key credential.")
-        credential = {"account_name": account_name, "account_key": credential}
-    if isinstance(credential, dict):
-        if "account_name" not in credential:
-            raise ValueError("Shared key credential missing 'account_name")
-        if "account_key" not in credential:
-            raise ValueError("Shared key credential missing 'account_key")
-        return SharedKeyCredentialPolicy(**credential)
+    # if isinstance(credential, six.string_types):
+    #     if not account_name:
+    #         raise ValueError("Unable to determine account name for shared key credential.")
+    #     credential = {"account_name": account_name, "account_key": credential}
+    # if isinstance(credential, dict):
+    #     if "account_name" not in credential:
+    #         raise ValueError("Shared key credential missing 'account_name")
+    #     if "account_key" not in credential:
+    #         raise ValueError("Shared key credential missing 'account_key")
+    #     return SharedKeyCredentialPolicy(**credential)
     return credential
 
 

@@ -148,7 +148,7 @@ class BaseBlobService(StorageClient):
     MAX_SINGLE_GET_SIZE = 32 * 1024 * 1024
     MAX_CHUNK_GET_SIZE = 4 * 1024 * 1024
 
-    def __init__(self, account_name=None, account_key=None, sas_token=None, is_emulated=False,
+    def __init__(self, storage_account_url, account_name=None, account_key=None, sas_token=None, is_emulated=False,
                  protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE, custom_domain=None, request_session=None,
                  connection_string=None, socket_timeout=None, token_credential=None):
         '''
@@ -196,6 +196,7 @@ class BaseBlobService(StorageClient):
         '''
         service_params = _ServiceParameters.get_service_parameters(
             'blob',
+            storage_account_url=storage_account_url,
             account_name=account_name,
             account_key=account_key,
             sas_token=sas_token,

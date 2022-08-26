@@ -13,14 +13,16 @@ try:
 except ImportError:
     from urlparse import urlparse # type: ignore
 
+from azure.core.exceptions import HttpResponseError
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import Pipeline
 from azure.core.tracing.decorator import distributed_trace
+from ._serialize import get_api_version
 from ._shared.models import LocationMode
 from ._shared.base_client import StorageAccountHostsMixin, TransportWrapper, parse_connection_str, parse_query
 from ._shared.response_handlers import process_storage_error
-from ._generated import AzureQueueStorage, VERSION
-from ._generated.models import StorageServiceProperties, StorageErrorException
+from ._generated import AzureQueueStorage
+from ._generated.models import StorageServiceProperties
 
 from ._models import (
     QueuePropertiesPaged,
@@ -50,6 +52,10 @@ class QueueServiceClient(StorageAccountHostsMixin):
     For operations relating to a specific queue, a client for this entity
     can be retrieved using the :func:`~get_queue_client` function.
 
+    For more optional configuration, please click
+    `here <https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/storage/azure-storage-queue
+    #optional-configuration>`_.
+
     :param str account_url:
         The URL to the queue service endpoint. Any other entities included
         in the URL path (e.g. queue) will be discarded. This URL can be optionally
@@ -60,8 +66,8 @@ class QueueServiceClient(StorageAccountHostsMixin):
         an instance of a AzureSasCredential from azure.core.credentials, an account
         shared access key, or an instance of a TokenCredentials class from azure.identity.
     :keyword str api_version:
-        The Storage API version to use for requests. Default value is '2019-07-07'.
-        Setting to an older version may result in reduced feature compatibility.
+        The Storage API version to use for requests. Default value is the most recent service version that is
+        compatible with the current SDK. Setting to an older version may result in reduced feature compatibility.
     :keyword str secondary_hostname:
         The hostname of the secondary endpoint.
 
@@ -102,8 +108,8 @@ class QueueServiceClient(StorageAccountHostsMixin):
             raise ValueError("You need to provide either a SAS token or an account shared key to authenticate.")
         self._query_str, credential = self._format_query_string(sas_token, credential)
         super(QueueServiceClient, self).__init__(parsed_url, service='queue', credential=credential, **kwargs)
-        self._client = AzureQueueStorage(self.url, pipeline=self._pipeline)
-        self._client._config.version = kwargs.get('api_version', VERSION)  # pylint: disable=protected-access
+        self._client = AzureQueueStorage(self.url, base_url=self.url, pipeline=self._pipeline)
+        self._client._config.version = get_api_version(kwargs)  # pylint: disable=protected-access
 
     def _format_url(self, hostname):
         """Format the endpoint URL according to the current location
@@ -147,7 +153,7 @@ class QueueServiceClient(StorageAccountHostsMixin):
 
     @distributed_trace
     def get_service_stats(self, **kwargs):
-        # type: (Optional[Any]) -> Dict[str, Any]
+        # type: (Any) -> Dict[str, Any]
         """Retrieves statistics related to replication for the Queue service.
 
         It is only available when read-access geo-redundant replication is enabled for
@@ -176,12 +182,12 @@ class QueueServiceClient(StorageAccountHostsMixin):
             stats = self._client.service.get_statistics( # type: ignore
                 timeout=timeout, use_location=LocationMode.SECONDARY, **kwargs)
             return service_stats_deserialize(stats)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
     def get_service_properties(self, **kwargs):
-        # type: (Optional[Any]) -> Dict[str, Any]
+        # type: (Any) -> Dict[str, Any]
         """Gets the properties of a storage account's Queue service, including
         Azure Storage Analytics.
 
@@ -204,7 +210,7 @@ class QueueServiceClient(StorageAccountHostsMixin):
         try:
             service_props = self._client.service.get_properties(timeout=timeout, **kwargs) # type: ignore
             return service_properties_deserialize(service_props)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -213,7 +219,7 @@ class QueueServiceClient(StorageAccountHostsMixin):
             hour_metrics=None,  # type: Optional[Metrics]
             minute_metrics=None,  # type: Optional[Metrics]
             cors=None,  # type: Optional[List[CorsRule]]
-            **kwargs
+            **kwargs  # type: Any
         ):
         # type: (...) -> None
         """Sets the properties of a storage account's Queue service, including
@@ -260,14 +266,14 @@ class QueueServiceClient(StorageAccountHostsMixin):
         )
         try:
             return self._client.service.set_properties(props, timeout=timeout, **kwargs) # type: ignore
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
     def list_queues(
             self, name_starts_with=None,  # type: Optional[str]
             include_metadata=False,  # type: Optional[bool]
-            **kwargs
+            **kwargs  # type: Any
         ):
         # type: (...) -> ItemPaged[QueueProperties]
         """Returns a generator to list the queues under the specified account.
@@ -317,7 +323,7 @@ class QueueServiceClient(StorageAccountHostsMixin):
     def create_queue(
             self, name,  # type: str
             metadata=None,  # type: Optional[Dict[str, str]]
-            **kwargs
+            **kwargs  # type: Any
         ):
         # type: (...) -> QueueClient
         """Creates a new queue under the specified account.
@@ -352,8 +358,9 @@ class QueueServiceClient(StorageAccountHostsMixin):
 
     @distributed_trace
     def delete_queue(
-            self, queue,  # type: Union[QueueProperties, str]
-            **kwargs
+            self,
+            queue,  # type: Union[QueueProperties, str]
+            **kwargs  # type: Any
         ):
         # type: (...) -> None
         """Deletes the specified queue and any messages it contains.
@@ -388,8 +395,11 @@ class QueueServiceClient(StorageAccountHostsMixin):
         kwargs.setdefault('merge_span', True)
         queue_client.delete_queue(timeout=timeout, **kwargs)
 
-    def get_queue_client(self, queue, **kwargs):
-        # type: (Union[QueueProperties, str], Optional[Any]) -> QueueClient
+    def get_queue_client(self,
+                         queue,  # type: Union[QueueProperties, str]
+                         **kwargs  # type: Any
+                         ):
+        # type: (...) -> QueueClient
         """Get a client to interact with the specified queue.
 
         The queue need not already exist.

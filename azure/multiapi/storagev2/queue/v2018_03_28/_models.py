@@ -7,10 +7,10 @@
 # pylint: disable=super-init-not-called
 
 from typing import List # pylint: disable=unused-import
+from azure.core.exceptions import HttpResponseError
 from azure.core.paging import PageIterator
 from ._shared.response_handlers import return_context_and_deserialized, process_storage_error
 from ._shared.models import DictMixin
-from ._generated.models import StorageErrorException
 from ._generated.models import AccessPolicy as GenAccessPolicy
 from ._generated.models import Logging as GeneratedLogging
 from ._generated.models import Metrics as GeneratedMetrics
@@ -264,8 +264,10 @@ class MessagesPaged(PageIterator):
     :param callable command: Function to retrieve the next page of items.
     :param int results_per_page: The maximum number of messages to retrieve per
         call.
+    :param int max_messages: The maximum number of messages to retrieve from
+        the queue.
     """
-    def __init__(self, command, results_per_page=None, continuation_token=None):
+    def __init__(self, command, results_per_page=None, continuation_token=None, max_messages=None):
         if continuation_token is not None:
             raise ValueError("This operation does not support continuation token")
 
@@ -275,17 +277,26 @@ class MessagesPaged(PageIterator):
         )
         self._command = command
         self.results_per_page = results_per_page
+        self._max_messages = max_messages
 
     def _get_next_cb(self, continuation_token):
         try:
+            if self._max_messages is not None:
+                if self.results_per_page is None:
+                    self.results_per_page = 1
+                if self._max_messages < 1:
+                    raise StopIteration("End of paging")
+                self.results_per_page = min(self.results_per_page, self._max_messages)
             return self._command(number_of_messages=self.results_per_page)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     def _extract_data_cb(self, messages): # pylint: disable=no-self-use
         # There is no concept of continuation token, so raising on my own condition
         if not messages:
             raise StopIteration("End of paging")
+        if self._max_messages is not None:
+            self._max_messages = self._max_messages - len(messages)
         return "TOKEN_IGNORED", [QueueMessage._from_generated(q) for q in messages]  # pylint: disable=protected-access
 
 
@@ -349,7 +360,7 @@ class QueuePropertiesPaged(PageIterator):
                 maxresults=self.results_per_page,
                 cls=return_context_and_deserialized,
                 use_location=self.location_mode)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     def _extract_data_cb(self, get_next_return):

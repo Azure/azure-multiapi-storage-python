@@ -25,11 +25,13 @@ except ImportError:
     from urlparse import urlparse  # type: ignore
     from urllib2 import quote, unquote  # type: ignore
 
+from azure.core.exceptions import HttpResponseError
 from azure.core.tracing.decorator import distributed_trace
 from azure.core.tracing.decorator_async import distributed_trace_async
 
 from azure.core.async_paging import AsyncItemPaged
 
+from .._serialize import get_api_version
 from .._shared.base_client_async import AsyncStorageAccountHostsMixin
 from .._shared.request_handlers import add_metadata_headers, serialize_iso
 from .._shared.response_handlers import (
@@ -38,9 +40,8 @@ from .._shared.response_handlers import (
     return_headers_and_deserialized,
 )
 from .._deserialize import deserialize_queue_properties, deserialize_queue_creation
-from .._generated.version import VERSION
 from .._generated.aio import AzureQueueStorage
-from .._generated.models import StorageErrorException, SignedIdentifier
+from .._generated.models import SignedIdentifier
 from .._generated.models import QueueMessage as GenQueueMessage
 
 from .._models import QueueMessage, AccessPolicy
@@ -69,8 +70,8 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         an instance of a AzureSasCredential from azure.core.credentials, an account
         shared access key, or an instance of a TokenCredentials class from azure.identity.
     :keyword str api_version:
-        The Storage API version to use for requests. Default value is '2019-07-07'.
-        Setting to an older version may result in reduced feature compatibility.
+        The Storage API version to use for requests. Default value is the most recent service version that is
+        compatible with the current SDK. Setting to an older version may result in reduced feature compatibility.
     :keyword str secondary_hostname:
         The hostname of the secondary endpoint.
     :keyword message_encode_policy: The encoding policy to use on outgoing messages.
@@ -110,8 +111,9 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         super(QueueClient, self).__init__(
             account_url, queue_name=queue_name, credential=credential, loop=loop, **kwargs
         )
-        self._client = AzureQueueStorage(self.url, pipeline=self._pipeline, loop=loop)  # type: ignore
-        self._client._config.version = kwargs.get('api_version', VERSION)  # pylint: disable=protected-access
+        self._client = AzureQueueStorage(self.url, base_url=self.url,
+                                         pipeline=self._pipeline, loop=loop)  # type: ignore
+        self._client._config.version = get_api_version(kwargs)  # pylint: disable=protected-access
         self._loop = loop
 
     @distributed_trace_async
@@ -149,7 +151,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             return await self._client.queue.create(  # type: ignore
                 metadata=metadata, timeout=timeout, headers=headers, cls=deserialize_queue_creation, **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -181,7 +183,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         timeout = kwargs.pop('timeout', None)
         try:
             await self._client.queue.delete(timeout=timeout, **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -210,7 +212,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             response = await self._client.queue.get_properties(
                 timeout=timeout, cls=deserialize_queue_properties, **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
         response.name = self.queue_name
         return response  # type: ignore
@@ -245,7 +247,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             return await self._client.queue.set_metadata(  # type: ignore
                 timeout=timeout, headers=headers, cls=return_response_headers, **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -264,7 +266,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             _, identifiers = await self._client.queue.get_access_policy(
                 timeout=timeout, cls=return_headers_and_deserialized, **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
         return {s.id: s.access_policy or AccessPolicy() for s in identifiers}
 
@@ -317,7 +319,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         signed_identifiers = identifiers  # type: ignore
         try:
             await self._client.queue.set_access_policy(queue_acl=signed_identifiers or None, timeout=timeout, **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -398,7 +400,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             queue_message.pop_receipt = enqueued[0].pop_receipt
             queue_message.next_visible_on = enqueued[0].time_next_visible
             return queue_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -454,7 +456,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             wrapped_message = QueueMessage._from_generated(  # pylint: disable=protected-access
                 message[0]) if message != [] else None
             return wrapped_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace
@@ -466,7 +468,9 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         content and a pop_receipt value, which is required to delete the message.
         The message is not automatically deleted from the queue, but after it has
         been retrieved, it is not visible to other clients for the time interval
-        specified by the visibility_timeout parameter.
+        specified by the visibility_timeout parameter. The iterator will continuously
+        fetch messages until the queue is empty or max_messages is reached (if max_messages
+        is set).
 
         If the key-encryption-key or resolver field is set on the local service object, the messages will be
         decrypted before being returned.
@@ -479,14 +483,16 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             `by_page()` can be used to provide a page iterator on the AsyncItemPaged if messages_per_page is set.
             `next()` can be used to get the next page.
         :keyword int visibility_timeout:
-            If not specified, the default value is 0. Specifies the
+            If not specified, the default value is 30. Specifies the
             new visibility timeout value, in seconds, relative to server time.
-            The value must be larger than or equal to 0, and cannot be
+            The value must be larger than or equal to 1, and cannot be
             larger than 7 days. The visibility timeout of a message cannot be
             set to a value later than the expiry time. visibility_timeout
             should be set to a value smaller than the time-to-live value.
         :keyword int timeout:
             The server timeout, expressed in seconds.
+        :keyword int max_messages:
+            An integer that specifies the maximum number of messages to retrieve from the queue.
         :return:
             Returns a message iterator of dict-like Message objects.
         :rtype: ~azure.core.async_paging.AsyncItemPaged[~azure.storage.queue.QueueMessage]
@@ -503,6 +509,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         messages_per_page = kwargs.pop('messages_per_page', None)
         visibility_timeout = kwargs.pop('visibility_timeout', None)
         timeout = kwargs.pop('timeout', None)
+        max_messages = kwargs.pop('max_messages', None)
         self._config.message_decode_policy.configure(
             require_encryption=self.require_encryption,
             key_encryption_key=self.key_encryption_key,
@@ -516,8 +523,12 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
                 cls=self._config.message_decode_policy,
                 **kwargs
             )
-            return AsyncItemPaged(command, results_per_page=messages_per_page, page_iterator_class=MessagesPaged)
-        except StorageErrorException as error:
+            if max_messages is not None and messages_per_page is not None:
+                if max_messages < messages_per_page:
+                    raise ValueError("max_messages must be greater or equal to messages_per_page")
+            return AsyncItemPaged(command, results_per_page=messages_per_page,
+                                  page_iterator_class=MessagesPaged, max_messages=max_messages)
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -620,7 +631,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             new_message.pop_receipt = response["popreceipt"]
             new_message.next_visible_on = response["time_next_visible"]
             return new_message
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -677,7 +688,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             for peeked in messages:
                 wrapped_messages.append(QueueMessage._from_generated(peeked))  # pylint: disable=protected-access
             return wrapped_messages
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -700,7 +711,7 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
         timeout = kwargs.pop('timeout', None)
         try:
             await self._client.messages.clear(timeout=timeout, **kwargs)
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)
 
     @distributed_trace_async
@@ -750,5 +761,5 @@ class QueueClient(AsyncStorageAccountHostsMixin, QueueClientBase):
             await self._client.message_id.delete(
                 pop_receipt=receipt, timeout=timeout, queue_message_id=message_id, **kwargs
             )
-        except StorageErrorException as error:
+        except HttpResponseError as error:
             process_storage_error(error)

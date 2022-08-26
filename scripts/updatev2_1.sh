@@ -17,13 +17,7 @@ src_root=$(cd venv/lib/$(ls venv/lib); pwd)/site-packages/azure/storage
 
 
 for service in blob fileshare filedatalake queue; do
-    ver=$(find venv -name 'version.py' | grep $service | xargs grep 'VERSION')
-    ver=${ver#VERSION = \"}
-    if [ -z "$ver" ]; then
-        ver=$(find venv -name '_configuration.py' | grep $service | xargs grep 'version' | head -n 1)
-        ver=${ver#*self.version = \"}
-    fi
-    ver=${ver%\"*}
+    ver=$(find venv -name '_serialize.py' | grep $service | xargs grep '[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}' | tail -n 1 | cut -d \' -f 2)
     ver=${ver//-/_}
 
     tgt=../azure/multiapi/storagev2/$service/v$ver

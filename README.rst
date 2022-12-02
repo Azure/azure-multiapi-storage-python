@@ -17,6 +17,19 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+1.0.0
+++++++
+* storageV1:
+    - Keep only v2018-11-09, v2017-11-09, v2017-04-17, v2015-04-05
+* blob:
+    - Keep only v2021-06-08, v2019-07-07
+* fileshare:
+    - Keep only v2021-06-08, v2019-07-07
+* filedatalake:
+    - Keep only v2021-08-06, v2019-07-07
+* queue:
+    - Keep only v2018-03-28, Add v2019-07-07
+
 0.10.0
 ++++++
 * blob:

@@ -22,7 +22,7 @@ Change Log
 * storageV1:
     - Keep only v2018-11-09, v2017-11-09, v2017-04-17, v2015-04-05
 * blob:
-    - Keep only v2021-06-08, v2019-07-07
+    - Keep only v2021-08-06, v2021-06-08, v2019-07-07
 * fileshare:
     - Keep only v2021-06-08, v2019-07-07
 * filedatalake:

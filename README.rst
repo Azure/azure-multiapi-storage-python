@@ -17,6 +17,10 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
+1.3.0
+++++++
+* fileshare: Support v2024-08-04(12.17.0) and remove v2022-11-02
+
 1.2.0
 ++++++
 * blob: Support v2022-11-02(12.16.0) and remove v2021-06-08

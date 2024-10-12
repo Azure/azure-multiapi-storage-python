@@ -1,0 +1,4 @@
+path_classifiers:
+  library:
+    # Classify policies.py files as library code
+    - "azure/multiapi/storagev2/**/policies.py"

@@ -2,5 +2,5 @@ path_classifiers:
   library:
     # Classify policies.py, _encryption.py, and _common_conversion.py files as library code
     - "azure/multiapi/storagev2/**/policies.py"
-    - "azure/multiapi/storage/**/_encryption.py"
+    - "azure/multiapi/storagev2/**/_encryption.py"
     - "azure/multiapi/**/_common_conversion.py"

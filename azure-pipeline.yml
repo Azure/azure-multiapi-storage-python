@@ -17,15 +17,17 @@ jobs:
     timeoutInMinutes: 10
 
     pool:
-      name: 'pool-ubuntu-2004'
+      name: 'pool-ubuntu-2204'
     strategy:
       matrix:
-        Python37:
-          python.version: '3.7'
-        Python38:
-          python.version: '3.8'
+        Python39:
+          python.version: '3.9'
         Python310:
           python.version: '3.10'
+        Python311:
+          python.version: '3.11'
+        Python312:
+          python.version: '3.12'
     steps:
       - task: UsePythonVersion@0
         displayName: 'Use Python $(python.version)'
@@ -40,12 +42,12 @@ jobs:
   - job: BuildPythonWheel
     condition: succeeded()
     pool:
-      name: 'pool-ubuntu-2004'
+      name: 'pool-ubuntu-2204'
     steps:
       - task: UsePythonVersion@0
-        displayName: Use Python 3.7
+        displayName: Use Python 3.12
         inputs:
-          versionSpec: 3.7
+          versionSpec: 3.12
       - bash: |
           set -ev
 

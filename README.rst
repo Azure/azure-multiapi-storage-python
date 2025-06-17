@@ -17,9 +17,19 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 Change Log
 ----------
-1.4.1
+1.5.0
 ++++++
 * packaging: Remove unused import, cleanup build pipeline
+* storage, cosmosdb:
+    - Remove all track1 sdks
+* blob:
+    - Keep only v2021-08-06, v2022-11-02
+* fileshare:
+    - Keep only v2025-05-05
+* filedatalake:
+    - Keep only v2021-08-06
+* queue:
+    - Keep only v2018-03-28
 
 1.4.0
 ++++++

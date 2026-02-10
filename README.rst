@@ -5,9 +5,11 @@ Handles multi-API versions of Azure Storage Data Plane originally from https://g
 
 **NOTE:**
 
+- This repo is currently inactive and archived as multiple API support has been dropped for Azure CLI.
+
 - This is not an official Azure Storage SDK.
 
-- It is used by https://github.com/Azure/azure-cli to support multiple API versions.
+- It was used by https://github.com/Azure/azure-cli to support multiple API versions.
 
 - The official Azure Storage SDK is at https://github.com/Azure/azure-storage-python.
 
